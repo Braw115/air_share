@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+    namespace="com.air.operations.mapper.OperationsMapper">
+    <resultMap type="com.air.pojo.vo.OperationsVO" id="consumeMap">
+        <association property="appUser" column="appusersId" select="selectById">
+        </association>
+    </resultMap>
+    <!-- 通过id查询用户 selectById -->
+    <select id="selectById" resultType="com.air.pojo.entity.AppUser">
+        select 
+            appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+            nickname, reviewStatus,perm , sex , address,vip, signature, email,  wxunionid ,
+            wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,model, useTime
+        from 
+            as_app_users
+        where appusersId = #{appusersId}
+    </select>
+    <!-- 消费使用统计 -->
+    <select id="consumeStatistics" parameterType="com.air.pojo.vo.OperationsVO" resultMap="consumeMap">
+        SELECT
+		    ao.appusersId,
+		    au.nickname as username,
+		    au.telephone,
+		    au.address,
+		    au.carbon,
+		    COUNT(1) num,
+		    SUM(realfee) price
+		    <if test="beginDate != null and beginDate != ''">
+	          , #{beginDate} beginDate
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	          , #{endDate} endDate
+	        </if>
+		FROM
+		    as_orders ao
+		LEFT JOIN as_app_users au ON ao.appusersId = au.appusersId
+		WHERE
+		    paystatus = 'yes'
+		AND paytype = 'cost'
+		<if test="beginDate != null and beginDate != ''">
+          AND ao.created <![CDATA[>=]]> #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+          AND ao.created <![CDATA[<]]> #{endDate}
+        </if>
+		GROUP BY
+		    ao.appusersId
+        <!-- SELECT
+		    mac, se.`name` series, datediff(CURDATE(), useTime) putDate, lb.num, lb.price, lb.paytype
+		FROM
+		    as_air_condition ac
+		JOIN as_air_series se ON ac.seriesId = se.seriesId
+		LEFT JOIN (
+		    SELECT
+		        airmac, COUNT(*) num, SUM(realfee) price, GROUP_CONCAT(DISTINCT paytype) paytype
+		    FROM
+		        as_orders
+		    WHERE
+		        paystatus = 'yes'
+	            <if test="beginDate != null and beginDate != ''">
+	              AND created <![CDATA[>=]]> beginDate
+	            </if>
+	            <if test="endDate != null and endDate != ''">
+	              AND created <![CDATA[<]]> endDate
+	            </if>
+		    GROUP BY
+		        airmac
+		) lb ON mac = lb.airmac -->
+    </select>
+    
+    <!-- 支付时间段统计 -->
+    <select id="payHabitStatisticsByTime" parameterType="com.air.pojo.vo.PayHabitVO" resultType="com.air.pojo.vo.PayHabitVO">
+        SELECT
+		    DATE_FORMAT(paytime, '%H') payHour, COUNT(ordersId) num
+		FROM
+		    as_orders
+		WHERE
+		    paystatus = 'yes'
+		    AND paytype='cost'
+		    <if test="beginDate != null and beginDate != ''">
+              AND created <![CDATA[>=]]> #{beginDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+              AND created <![CDATA[<]]> #{endDate}
+            </if>
+		GROUP BY
+		    payHour
+    </select>
+    
+    <!-- 支付方式统计 -->
+    <select id="payHabitStatisticsByMethod" parameterType="com.air.pojo.vo.PayHabitVO" resultType="com.air.pojo.vo.PayHabitVO">
+        SELECT
+		    paymethod payMethod,
+		    COUNT(ordersId) num
+		FROM
+		    as_orders
+		WHERE
+		    paystatus = 'yes'
+		    AND paytype='cost'
+		    <if test="beginDate != null and beginDate != ''">
+              AND created <![CDATA[>=]]> #{beginDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+              AND created <![CDATA[<]]> #{endDate}
+            </if>
+		GROUP BY
+		    paymethod
+   </select>
+    
+   <!-- 获取指定空调 近dayCount天的消费情况 -->
+   <select id="consumeTrend" resultType="com.air.pojo.entity.Series">
+        SELECT
+            se.seriesId, `name`, specification, type, DATE_FORMAT(ac.created, '%Y-%m-%d') order_date,
+            price, COUNT(mac) num
+        FROM
+            as_air_condition ac
+        LEFT JOIN as_air_series se ON ac.seriesId = se.seriesId
+        <where>
+            se.seriesId IN 
+		        <foreach collection="macList" index="index" item="item" open="(" separator="," close=")">  
+		        #{item}  
+		        </foreach>
+        </where>
+        GROUP BY
+         order_date,se.seriesId
+        HAVING
+            DATE_SUB(NOW(), INTERVAL #{dayCount} DAY) <![CDATA[<=]]> DATE(order_date)
+        <!-- SELECT
+		    airmac mac,
+		    DATE_FORMAT(paytime, '%Y-%m-%d') order_date,
+		    SUM(realfee) price
+		FROM
+		    as_orders ao
+		WHERE
+		    paystatus = 'yes'
+		AND DATE_SUB(NOW(), INTERVAL #{dayCount} DAY) <![CDATA[<=]]> DATE(paytime)
+		AND airmac IN 
+		<foreach collection="macList" index="index" item="item" open="(" separator="," close=")">  
+        #{item}  
+        </foreach>
+		GROUP BY
+		    airmac,
+		    order_date; -->
+   </select>
+   
+   <!-- 消费前n台设备 -->
+   <select id="consumeTop" resultType="com.air.pojo.entity.Series">
+	   SELECT
+		    se.seriesId,
+		    `name`,
+		    specification,
+		    type,
+		    price,
+		    COUNT(mac) `num`
+		FROM
+		    as_air_condition ac
+		LEFT JOIN as_air_series se ON ac.seriesId = se.seriesId
+		WHERE
+		  se.seriesId IS NOT NULL
+		  <if test="seriesName != null and seriesName !=''">
+		      AND type LIKE CONCAT('%',#{seriesName},'%')
+		  </if>
+		GROUP BY
+		    ac.seriesId
+		ORDER BY
+		    COUNT(mac) DESC
+		LIMIT 0, #{count}
+       <!-- 
+        SELECT
+		    mac, se.`name` series, datediff(CURDATE(), useTime) putDate, IFNULL(lb.num,0) num,
+		    IFNULL(lb.price,0) price, lb.paymethod
+		FROM
+		    as_air_condition ac
+		JOIN as_air_series se ON ac.seriesId = se.seriesId
+		LEFT JOIN (
+		    SELECT
+		        airmac, COUNT(*) num, SUM(realfee) price, GROUP_CONCAT(DISTINCT paymethod) paymethod
+		    FROM
+		        as_orders
+		    WHERE
+		        paystatus = 'yes'
+		    GROUP BY
+		        airmac
+		) lb ON mac = lb.airmac
+		ORDER BY price DESC
+		LIMIT 0,  -->
+   </select>
+   
+   <!-- 消费后n台设备 -->
+   <select id="consumeLater" resultType="com.air.pojo.entity.Series">
+        SELECT
+            se.seriesId,
+            `name`,
+            specification,
+            type,
+            price,
+            COUNT(mac) `num`
+        FROM
+            as_air_condition ac
+        LEFT JOIN as_air_series se ON ac.seriesId = se.seriesId
+        <where>
+          <if test="seriesName != null and seriesName !=''">
+              type LIKE CONCAT('%',#{seriesName},'%')
+          </if>
+        </where>
+        GROUP BY
+            ac.seriesId
+        ORDER BY
+            COUNT(mac) ASC
+        LIMIT 0, #{count}
+        <!-- SELECT
+            mac, se.`name` series, datediff(CURDATE(), useTime) putDate, IFNULL(lb.num,0) num,
+            IFNULL(lb.price,0) price, lb.paymethod
+        FROM
+            as_air_condition ac
+        JOIN as_air_series se ON ac.seriesId = se.seriesId
+        LEFT JOIN (
+            SELECT
+                airmac, COUNT(*) num, SUM(realfee) price, GROUP_CONCAT(DISTINCT paymethod) paymethod
+            FROM
+                as_orders
+            WHERE
+                paystatus = 'yes'
+            GROUP BY
+                airmac
+        ) lb ON mac = lb.airmac
+        ORDER BY price ASC
+        LIMIT 0, #{count} -->
+   </select>
+   
+   <!-- 消费使用分析 -->
+   <select id="consumeAnalysis" parameterType="com.air.pojo.vo.ConsumeAnalysisVO" resultType="com.air.pojo.vo.ConsumeAnalysisVO">
+    SELECT
+	    paymethod,
+	    COUNT(ordersId) count
+	FROM
+	    as_orders ao
+	JOIN as_air_condition ac ON ao.airmac = ac.mac
+	JOIN as_air_series se ON ac.seriesId = se.seriesId
+	WHERE
+	    paystatus = 'yes'
+	AND paytype = 'cost'
+	<if test="brands != null and brands != ''">
+	   AND se.`name` LIKE CONCAT('%',#{brands},'%')
+	</if>
+	<if test="series != null and series != ''">
+		AND se.type LIKE CONCAT('%',#{series},'%')
+	</if>
+	<if test="beginDate != null and beginDate != ''">
+	   AND ao.paytime <![CDATA[>=]]> #{beginDate}
+	</if>
+	<if test="endDate != null and endDate != ''">
+	   AND ao.paytime <![CDATA[<=]]> #{endDate}
+	</if>
+	GROUP BY
+	    paymethod
+   </select>
+   
+   <!-- 存量统计 -->
+   <select id="stockStatistics" parameterType="com.air.pojo.vo.StockVO" resultType="com.air.pojo.vo.StockVO">
+    SELECT
+	    se.seriesId,
+	    se.`name`,
+	    se.type series,
+	    COUNT(ac.mac) count,
+	    se.price,
+	    COUNT(ac.mac)*se.price total
+	    <if test="beginDate != null and beginDate != ''">
+        , #{beginDate} beginDate
+	    </if>
+	    <if test="endDate != null and endDate != ''">
+	    , #{endDate} endDate
+	    </if>
+	FROM
+	    as_air_condition ac
+	JOIN as_air_series se ON ac.seriesId = se.seriesId
+	<where>
+	<trim prefixOverrides="AND |OR">
+	<if test="beginDate != null and beginDate != ''">
+		AND ac.created <![CDATA[>=]]> #{beginDate}
+	</if>
+	<if test="endDate != null and endDate != ''">
+		AND ac.created <![CDATA[<]]> #{endDate}
+	</if>
+	<if test="name != null and name != ''">
+		AND se.`name` LIKE CONCAT('%',#{name},'%')
+	</if>
+	<if test="series != null and series != ''">
+		AND se.type LIKE CONCAT('%',#{series},'%')
+	</if>
+	<if test="mac != null and mac != ''">
+        AND ac.mac LIKE CONCAT('%',#{mac},'%')
+    </if>
+	</trim>
+	</where>
+	GROUP BY
+        se.seriesId
+   </select>
+</mapper>

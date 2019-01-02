@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+    namespace="com.air.aircondition.mapper.OperationRecordMapper">
+    
+    <select id="selectByRecord" parameterType="com.air.pojo.vo.OperationRecordVO" resultType="com.air.pojo.entity.OperationRecord">
+        SELECT
+            operationId, mac, `order`, appusersId, created, execute
+        FROM
+            as_operation_record
+        <trim prefix="WHERE" prefixOverrides="AND |OR">
+            <if test="appusersId != null and appusersId != ''">
+                AND appusersId = #{appusersId}
+            </if>
+            <if test="mac != null and mac != ''">
+                AND mac = #{mac}
+            </if>
+            <if test="beginDate != null and beginDate != ''">
+                AND created <![CDATA[>=]]> #{beginDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND created <![CDATA[<=]]> #{endDate}
+            </if>
+        </trim>
+        ORDER BY
+            created DESC
+    </select>
+    
+    <!-- 添加操作记录 -->
+    <insert id="addOperationRecord" parameterType="com.air.pojo.entity.OperationRecord">      
+        <selectKey keyProperty="operationId" resultType="java.lang.Integer">
+            select LAST_INSERT_ID() as operationId
+        </selectKey>
+        INSERT INTO 
+            as_operation_record(mac, `order`, appusersId, execute) 
+        VALUES
+            (#{mac}, #{order}, #{appusersId}, #{execute})
+    </insert>
+    
+    <!-- 获取最后一条操作指令 -->
+    <select id="getLastOperRecord" resultType="com.air.pojo.entity.OperationRecord">
+        SELECT
+            operationId, mac, `order`, appusersId, created
+        FROM
+            as_operation_record
+        WHERE
+            appusersId = #{appusersId}
+            AND execute = 1
+        ORDER BY created DESC
+        LIMIT 0,1
+    </select>
+    
+    <select id="getLastOpendRecord" resultType="com.air.pojo.entity.OperationRecord">
+        SELECT
+            operationId, mac, `order`, appusersId, created
+        FROM
+            as_operation_record
+        WHERE
+            appusersId = #{userId}
+            AND `order` = #{order}
+            AND execute = 1
+        ORDER BY created DESC
+        LIMIT 0,1
+    </select>
+    
+    <!-- 获取最后一条操作指令 -->
+    <select id="getLastOperRecordByMac" resultType="com.air.pojo.entity.OperationRecord">
+        SELECT
+            operationId, mac, `order`, appusersId, created
+        FROM
+            as_operation_record
+        WHERE
+            mac = #{mac}
+            AND execute = 1
+        ORDER BY created DESC
+        LIMIT 0,1
+    </select>
+</mapper>

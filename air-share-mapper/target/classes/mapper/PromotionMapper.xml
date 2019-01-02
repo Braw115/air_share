@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.user.mapper.PromotionMapper">
+	
+	<!-- 添加红包活动信息  insertRedBoxActive-->
+	<insert id="insertRedBoxActive" parameterType="com.air.pojo.vo.RedBoxActiveVo" useGeneratedKeys="true" keyProperty="redBoxActiveId">
+		INSERT INTO as_redbox_active (
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime
+		)
+		VALUES
+			(
+				#{activeName},
+				#{totalValue},
+				#{conformLevel},
+				#{redBoxMaxLevel},
+				#{redBoxMinLevel},
+				#{status},
+				#{imgUrl},
+				#{beginTime},
+				#{endTime}
+			)						
+	</insert>
+	
+	<!-- 	修改红包活动 updateRedBoxActive -->
+	<update id="updateRedBoxActive" parameterType="com.air.pojo.entity.RedBoxActive">
+		UPDATE as_redbox_active
+		SET 
+		<trim suffixOverrides=",">
+			<if test="activeName != null and activeName != ''">
+				activeName=#{activeName},
+			</if>
+			<if test="totalValue != null and totalValue != ''">
+				totalValue=#{totalValue},
+			</if>
+			<if test="conformLevel != null and conformLevel != ''">
+				conformLevel=#{conformLevel},
+			</if>
+			<if test="redBoxMaxLevel != null and redBoxMaxLevel != ''">
+				redBoxMaxLevel=#{redBoxMaxLevel},
+			</if>
+			<if test="redBoxMinLevel != null and redBoxMinLevel != ''">
+				redBoxMinLevel=#{redBoxMinLevel},
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				beginTime=#{beginTime},
+			</if>
+			<if test="endTime != null and endTime != ''">
+				endTime=#{endTime},
+			</if>
+			<if test="imgUrl != null and imgUrl != ''">
+				imgUrl=#{imgUrl},
+			</if>
+		</trim>	
+		WHERE
+			redBoxActiveId = #{redBoxActiveId}
+			And activeName!='carbon'
+	</update>
+	
+	<!-- 	发布和下架红包活动 updateRedBoxActiveStatus -->
+	<update id="updateRedBoxActiveStatus" >
+		UPDATE as_redbox_active
+		SET 
+			 status = #{status}
+		WHERE
+			redBoxActiveId in
+			<foreach collection="redBoxActiveIdlist" item="redBoxActiveId" open="(" separator="," close=")">
+				#{redBoxActiveId}
+			</foreach>
+	</update>
+	
+	
+	<!-- 根据红包活动状态查询红包活动信息 selectRedBoxActiveBystatus -->
+	<select id="selectRedBoxActiveBystatus" resultType="com.air.pojo.entity.RedBoxActive">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+				WHERE
+			status=#{status}
+	</select>
+	
+	<!-- 查询所有红包活动信息 selectAllRedBoxActive -->
+	<select id="selectAllRedBoxActive" resultType="com.air.pojo.vo.RedBoxActiveVo">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="name != null and name !=''">
+				AND activeName like CONCAT('%',#{name},'%')
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 根据红包活动id查询红包活动信息	selectRedBoxActiveById -->
+	<select id="selectRedBoxActiveById" resultType="com.air.pojo.entity.RedBoxActive">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+		WHERE
+			redBoxActiveId=#{redBoxActiveId}
+	</select>
+	
+	<!-- 根据名称模糊查询红包活动信息 selectRedBoxActiveByName -->
+	<select id="selectRedBoxActiveByName" resultType="com.air.pojo.vo.RedBoxActiveVo">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+		WHERE
+			activeName like CONCAT('%',#{name},'%')
+	</select>
+	
+	
+	<!-- 根据名称模糊查询已发布的红包活动信息 selectRedBoxActiveByNameOk -->
+	<select id="selectRedBoxActiveByNameOk" resultType="com.air.pojo.entity.RedBoxActive">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+		WHERE
+			activeName like CONCAT('%',#{activeName},'%')
+			and
+			status = true
+			AND #{date} BETWEEN beginTime
+			AND endTime
+	</select>
+	
+	<!-- 查询当前可以参加的红包活动 selectRedBoxs -->
+	<select id="selectRedBoxs" resultType="com.air.pojo.vo.BoxAndVoucherVo">
+		SELECT
+			redBoxActiveId id,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			imgUrl,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			'B' type
+		FROM
+			as_redbox_active
+		WHERE
+			status = true
+			AND activeName !='carbon'
+			AND #{nowTime} BETWEEN beginTime
+			AND endTime
+	</select>
+	
+	<!-- 添加领取红包记录 insertRedBoxNote -->
+	<insert id="insertRedBoxNote" parameterType="com.air.pojo.entity.RedBoxNote" useGeneratedKeys="true" keyProperty="redBoxNoteId">
+		INSERT INTO as_redbox_note (
+			redBoxActiveId,
+			appusersId,
+			value
+		)
+		VALUES
+			(
+				#{redBoxActiveId},
+				#{appusersId},
+				#{value}
+			)
+	</insert>
+	
+	<!-- 根据用户id和红包活动id查询用户红包记录 selectRedBoxNoteByRedBoxNote -->
+	<select id="selectRedBoxNoteByRedBoxNote" resultType="com.air.pojo.entity.RedBoxNote">
+		SELECT
+			redBoxNoteId,
+			redBoxActiveId,
+			appusersId,
+			value,
+			created
+		FROM
+			as_redbox_note
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="appusersId != null and appusersId !=''" >
+				AND appusersId=#{appusersId}
+			</if>
+			<if test="redBoxActiveId != null and redBoxActiveId !=''" >
+				AND redBoxActiveId=#{redBoxActiveId}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 统计发放的红包总数 selecttotalValue -->
+	<select id="selecttotalValue" resultType="java.lang.Integer">
+		SELECT
+			count(n.redBoxActiveId) totalValue
+		FROM
+			as_redbox_note n
+		LEFT JOIN as_redbox_active a ON n.redBoxActiveId = a.redBoxActiveId
+		WHERE 
+			a.redBoxActiveId=#{redBoxActiveId}
+	</select>
+	
+	<!-- 统计发放的红包总金额 selectSendTotalValue -->
+	<select id="selectSendTotalValue" resultType="java.math.BigDecimal">
+		SELECT
+			sum(n.value) sendTotalValue
+		FROM
+			as_redbox_note n
+		LEFT JOIN as_redbox_active a ON n.redBoxActiveId = a.redBoxActiveId
+		WHERE 
+			a.redBoxActiveId=#{redBoxActiveId}
+	</select>
+	
+	<!-- 添加代金券折扣券活动 insertVoucherActive -->
+	<insert id="insertVoucherActive" parameterType="com.air.pojo.entity.VoucherActive">
+		INSERT INTO as_voucher_active (
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			validTime,
+			status,
+			beginTime,
+			endTime,
+			imgUrl
+		)
+		VALUES
+			(
+				#{activeName},
+				#{totalCount},
+				#{conformLevel},
+				#{voucherMinLevel},
+				#{faceValue},
+				#{discount},
+				#{validTime},
+				#{status},
+				#{beginTime},
+				#{endTime},
+				#{imgUrl}
+			)
+	</insert>
+	
+	<!-- 添加红包活动获奖区间和比例信息 insertRedBoxRates -->
+	<insert id="insertRedBoxRates" parameterType="com.air.pojo.entity.RedBoxRate">
+		INSERT INTO as_redbox_rate (
+			redBoxActiveId,
+			redBoxMax,
+			redBoxMin,
+			redBoxRate
+		)
+		VALUES
+			<foreach collection="redBoxRates" item="redBoxRate" separator=",">
+			(
+				#{redBoxRate.redBoxActiveId},
+				#{redBoxRate.redBoxMax},
+				#{redBoxRate.redBoxMin},
+				#{redBoxRate.redBoxRate}
+			)
+			</foreach>
+	</insert>
+	
+	<!-- 修改红包活动获奖区间和比例信息 updateRedBoxRate -->
+	<update id="updateRedBoxRate" parameterType="com.air.pojo.entity.RedBoxRate">
+		update as_redbox_rate
+		set
+		<foreach collection="redBoxRates" index="redBoxRate">
+			(
+				activeName = #{activeName},
+				redBoxMax = #{redBoxMax},
+				redBoxMin = #{redBoxMin},
+				redBoxRate = #{redBoxRate}
+			)
+		</foreach>
+		where redBoxRateId in
+		<foreach collection="redBoxRates" index="redBoxRate" open="(" separator="," close=")">
+			#{redBoxRateId}
+		</foreach>
+		and redBoxActiveId in
+		<foreach collection="redBoxRates" index="redBoxRate" open="(" separator="," close=")">
+			#{redBoxActiveId}
+		</foreach>
+					
+	</update>
+	
+	<!-- 根据红包活动id查询相应的红包比例信息 selectRedBoxRateByRedBoxActiveId -->
+	<select id="selectRedBoxRateByRedBoxActiveId" resultType="com.air.pojo.entity.RedBoxRate">
+		SELECT
+			redBoxRateId,
+			redBoxActiveId,
+			redBoxMax,
+			redBoxMin,
+			redBoxRate,
+			created,
+			modified
+		FROM
+			as_redbox_rate
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="redBoxActiveId !=null and redBoxActiveId!=''">
+				redBoxActiveId =#{redBoxActiveId}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 根据条件查询用户可以领取的红包 selectAllRedBoxActiveByOrder -->
+	<select id="selectAllRedBoxActiveByOrder" parameterType="com.air.pojo.entity.Order" resultType="com.air.pojo.entity.RedBoxActive">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified
+		FROM
+			as_redbox_active
+		WHERE
+			status = 'true'
+		<if test="paytime != null and paytime != ''">
+			AND #{paytime} BETWEEN beginTime
+			AND endTime
+		</if>
+	</select>
+	
+	<!-- 批量发布下架代金券活动 updateVoucherActiveStatus -->
+	<update id="updateVoucherActiveStatus" >
+		UPDATE as_voucher_active
+		SET 
+			 status = #{status}
+		WHERE
+			voucherActiveId in
+			<foreach collection="voucherActiveIdlist" item="voucherActiveId" open="(" separator="," close=")">
+				#{voucherActiveId}
+			</foreach>
+	</update>
+	
+	<!-- 修改代金券活动 updateVoucherActive -->
+	<update id="updateVoucherActive" parameterType="com.air.pojo.entity.VoucherActive">
+		UPDATE as_voucher_active
+		SET 
+		<trim suffixOverrides=",">
+			<if test="activeName != null and activeName != ''">
+				activeName=#{activeName},
+			</if>
+			<if test="totalCount != null and totalCount != ''">
+				totalCount=#{totalCount},
+			</if>
+			<if test="conformLevel != null and conformLevel != ''">
+				conformLevel=#{conformLevel},
+			</if>
+			<if test="voucherMinLevel != null and voucherMinLevel != ''">
+				voucherMinLevel=#{voucherMinLevel},
+			</if>
+			<if test="faceValue != null and faceValue != ''">
+				faceValue=#{faceValue},
+			</if>
+			<if test="discount != null and discount != ''">
+				discount=#{discount},
+			</if>
+			<if test="status != null">
+				status=#{status},
+			</if>
+			<if test="beginTime != null and beginTime != ''">
+				beginTime=#{beginTime},
+			</if>
+			<if test="endTime != null and endTime != ''">
+				endTime=#{endTime},
+			</if>
+			<if test="validTime != null and validTime != ''">
+				validTime=#{validTime},
+			</if>
+			<if test="imgUrl != null and imgUrl != ''">
+				imgUrl=#{imgUrl},
+			</if>
+		</trim>
+		WHERE voucherActiveId = #{voucherActiveId}
+	</update>
+	
+	<!-- 	根据状态查询代金券活动selectVoucherActiveBystatus -->
+	<select id="selectVoucherActiveBystatus" resultType="com.air.pojo.entity.VoucherActive">
+		SELECT
+			voucherActiveId,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl
+		FROM
+			as_voucher_active
+		WHERE
+			status=#{status}	
+	</select>
+	
+	<!-- 查询所有代金券活动 selectAllVoucherActive -->
+	<select id="selectAllVoucherActive" resultType="com.air.pojo.entity.VoucherActive">
+		SELECT
+			voucherActiveId,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl
+		FROM
+			as_voucher_active
+	</select>
+	
+	<!-- 	selectVoucherActiveById -->
+	<select id="selectVoucherActiveById" resultType="com.air.pojo.entity.VoucherActive">
+		SELECT
+			voucherActiveId,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl
+		FROM
+			as_voucher_active
+		WHERE
+			voucherActiveId=#{voucherActiveId}
+	</select>
+	
+	<!-- 根据名称模糊查询代金券活动信息 selectVoucherActiveByName -->
+	<select id="selectVoucherActiveByVo" parameterType="com.air.pojo.vo.VoucherActiveVo" resultType="com.air.pojo.entity.VoucherActive">
+		SELECT
+			voucherActiveId,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl
+		FROM
+			as_voucher_active
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="activeName !=null and activeName !=''">
+				AND activeName like CONCAT('%',#{activeName},'%')
+			</if>
+			<if test="status !=null and status !=''">
+				AND status =#{status}
+			</if>
+			<if test="voucherActiveId !=null and voucherActiveId !=''">
+				AND voucherActiveId =#{voucherActiveId}
+			</if>
+			<if test="nowTime !=null and nowTime !=''">
+				AND nowTime BETWEEN beginTime
+				AND endTime
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 统计发放的代金券和折扣券总数 selectVouchersTotalCount -->
+	<select id="selectVouchersTotalCount" resultType="java.lang.Integer">
+		SELECT
+			count(v.voucherActiveId) totalCount
+		FROM
+			as_vouchers v
+		LEFT JOIN as_voucher_active a ON v.voucherActiveId = a.voucherActiveId
+		WHERE 
+			a.voucherActiveId=#{voucherActiveId}
+	</select>
+	
+	<!-- 根据条件查询是否满足领取代金券 selectVoucherActiveByOrder -->
+	<select id="selectVoucherActiveByOrder" parameterType="com.air.pojo.entity.Order" resultType="com.air.pojo.entity.VoucherActive">
+		SELECT
+			voucherActiveId,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl
+		FROM
+			as_voucher_active
+		WHERE
+			status = 'yes'
+		<if test="paytime != null and paytime != ''">
+			AND #{paytime} BETWEEN beginTime
+			AND endTime
+		</if>
+	</select>
+	
+	<!-- 	selectVoucherActives -->
+	<select id="selectVoucherActives" parameterType="java.lang.String"  resultType="com.air.pojo.vo.BoxAndVoucherVo">
+		SELECT
+			voucherActiveId id,
+			activeName,
+			totalCount,
+			conformLevel,
+			voucherMinLevel,
+			faceValue,
+			discount,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			validTime,
+			imgUrl,
+			'A' type
+		FROM
+			as_voucher_active
+		WHERE
+			status = true
+			AND #{time} BETWEEN beginTime
+			AND endTime
+	</select>
+	
+	<!-- 用户获取代金券之后添加 insertVouchers -->
+	<insert id="insertVouchers" useGeneratedKeys="true" keyProperty="voucherId"  parameterType="com.air.pojo.entity.Vouchers">
+		INSERT INTO as_vouchers (
+			facevalue,
+			minimum,
+			validTime,
+			type,
+			discountRatio,
+			status,
+			appusersId,
+			voucherActiveId
+		)
+		VALUES
+			(
+				#{facevalue},
+				#{minimum},
+				#{validTime},
+				#{type},
+				#{discountRatio},
+				#{status},
+				#{appusersId},
+				#{voucherActiveId}
+			)
+	</insert>
+	
+	
+	<!-- 	根据红包活动id删除红包概率区间 deleteRedBoxRates -->
+	<delete id="deleteRedBoxRates">
+		delete from as_redbox_rate 
+		where  
+		redBoxActiveId =#{redBoxActiveId}
+	</delete>
+	
+	<!-- 查询红包活动信息 selectRedBoxActive -->
+	<select id="selectRedBoxActive" parameterType="com.air.pojo.vo.RedBoxActiveVo" resultType="com.air.pojo.vo.RedBoxActiveVo">
+		SELECT
+			redBoxActiveId,
+			activeName,
+			totalValue,
+			conformLevel,
+			redBoxMaxLevel,
+			redBoxMinLevel,
+			status,
+			beginTime,
+			endTime,
+			created,
+			modified,
+			imgUrl
+		FROM
+			as_redbox_active
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if test="redBoxActiveId !=null and redBoxActiveId!=''">
+				AND redBoxActiveId=#{redBoxActiveId}
+			</if>
+			<if test="status !=null and status!=''">
+				AND status=#{status}
+			</if>
+			<if test="activeName !=null and activeName!=''">
+				AND activeName like concat('%',#{activeName},'%')
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 根据红包活动id查询红包活动信息 deleteRedBoxActive -->
+	<delete id="deleteRedBoxActive">
+		delete from as_redbox_active
+		where redBoxActiveId=#{redBoxActiveId}
+	</delete>
+	
+	<!-- 根据优惠券活动id删除优惠券活动信息  deleteVoucherActive -->
+	<delete id="deleteVoucherActive">
+		delete from as_voucher_active
+		where voucherActiveId=#{voucherActiveId}
+	</delete>
+	
+	<!-- 查询代金券，折扣券 selectVoucher -->
+	<select id="selectVoucher" resultType="com.air.pojo.entity.Vouchers" parameterType="com.air.pojo.entity.Vouchers">
+		SELECT
+			voucherId,
+			facevalue,
+			minimum,
+			validTime,
+			created,
+			modified,
+			type,
+			discountRatio,
+			status,
+			appusersId,
+			voucherActiveId
+		FROM
+			as_vouchers
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="voucherId != null and voucherId !=''">
+				AND voucherId=#{voucherId}
+			</if>
+			<if test="status != null and status !=''">
+				AND status=#{status}
+			</if>
+			<if test="appusersId != null and appusersId !=''">
+				AND appusersId=#{appusersId}
+			</if>
+			<if test="voucherActiveId != null and voucherActiveId !=''">
+				AND voucherActiveId=#{voucherActiveId}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 	selectRedBox -->
+	<select id="selectRedBox" resultType="com.air.pojo.vo.BoxAndVoucherVo">
+		SELECT
+			a.redBoxActiveId id,
+			a.activeName,
+			a.imgUrl,
+			'B' type
+		FROM
+			as_redbox_active a
+		LEFT JOIN as_redbox_note n ON (
+			n.redBoxActiveId = a.redBoxActiveId
+		)
+		AND n.appusersId = #{appusersId}
+		WHERE
+			n.appusersId IS NULL 
+			AND a.status = true
+			AND #{nowTime} BETWEEN a.beginTime
+			AND a.endTime
+			AND a.activeName!='carbon'
+	</select>
+	
+	<!-- 	selectVoucherActive -->
+	<select id="selectVoucherActive" resultType="com.air.pojo.vo.BoxAndVoucherVo">
+		SELECT
+			a.voucherActiveId id,
+			a.imgUrl,
+			a.activeName,
+			'V' type
+		FROM
+			as_voucher_active a
+		LEFT JOIN as_vouchers v ON (
+			v.voucherActiveId = a.voucherActiveId
+		)
+		AND v.appusersId = #{appusersId}
+		WHERE
+			v.appusersId IS NULL
+			AND a.status = true
+			AND #{nowTime} BETWEEN a.beginTime
+			AND a.endTime
+	</select>
+	
+	<!-- 查询过期的优惠券 selectVoucherTimeout -->
+	<select id="selectVoucherTimeout" resultType="com.air.pojo.entity.Vouchers">
+		SELECT
+			voucherId,
+			facevalue,
+			minimum,
+			validTime,
+			created,
+			modified,
+			type,
+			discountRatio,
+			status,
+			appusersId,
+			voucherActiveId
+		FROM
+			as_vouchers
+		WHERE 
+			appusersId=#{appUserId} 
+			AND status='no' 
+			AND created&lt;date_sub(now(), interval validTime day)
+	</select>
+		
+	<!-- 根据优惠券id批量修改优惠券状态 updateVoucherStatus -->
+	<update id="updateVoucherStatus">
+		UPDATE as_vouchers 
+		SET 
+			status =#{status} 
+		WHERE voucherId in
+		<foreach collection="idList" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</update>
+</mapper>

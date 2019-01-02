@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.crmuser.mapper.UserSectionMapper">
+	
+	<!-- 插入促销活动信息 -->
+	<insert id="insertActiveType" parameterType="com.air.pojo.entity.ActiveType">
+		INSERT INTO as_active_type (
+			seriesId,
+			activeName,
+			yearPrice,
+			discount,
+			areaId,
+			beginTime,
+			endTime,
+			shelves,
+			img,
+			imgTurn,
+			imgDetail,
+			type
+		)
+		VALUES
+			(
+				#{seriesId},
+				#{activeName},
+				#{yearPrice},
+				#{discount},
+				#{areaId},
+				#{beginTime},
+				#{endTime},
+				#{shelves},
+				#{img},
+				#{imgTurn},
+				#{imgDetail},
+				#{type}
+			)
+	</insert>
+	
+	<!-- 查询促销活动信息 -->
+	<select id="selectActiveType" parameterType="com.air.pojo.vo.ActiveTypeVo" resultType="com.air.pojo.entity.ActiveType">
+		SELECT
+			activeId,
+			seriesId,
+			activeName,
+			yearPrice,
+			discount,
+			areaId,
+			beginTime,
+			endTime,
+			shelves,
+			img,
+			created,
+			modified,
+			imgTurn,
+			imgDetail,
+			type
+		FROM
+			as_active_type
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if test="shelves!=null and shelves!=''">
+				AND shelves=#{shelves}
+			</if>
+			<if test="activeId!=null and activeId!=''">
+				AND activeId=#{activeId}
+			</if>
+			<if test="seriesId!=null and seriesId!=''">
+				AND seriesId=#{seriesId}
+			</if>
+			<if test="activeName!=null and activeName!=''">
+				AND activeName like concat('%',#{activeName},'%')
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 修改促销活动 -->
+	<update id="updateActiveType" parameterType="com.air.pojo.entity.ActiveType">
+		update as_active_type
+		set
+		<trim prefixOverrides=",">
+			<if test="seriesId !=null and seriesId !=''">
+				,seriesId=#{seriesId}
+			</if>
+			<if test="activeName !=null and activeName !=''">
+				,activeName = #{activeName}
+			</if>
+			<if test="yearPrice !=null and yearPrice !=''">
+				,yearPrice = #{yearPrice}
+			</if>
+			<if test="discount !=null and discount !=''">
+				,discount = #{discount}
+			</if>
+			<if test="areaId !=null and areaId !=''">
+				,areaId = #{areaId}
+			</if>
+			<if test="beginTime !=null and beginTime !=''">
+				,beginTime = #{beginTime}
+			</if>
+			<if test="endTime !=null and endTime !=''">
+				,endTime = #{endTime}
+			</if>
+			<if test="shelves !=null and shelves !=''">
+				,shelves = #{shelves}
+			</if>
+			<if test="img !=null and img !=''">
+				,img = #{img}
+			</if>
+			<if test="imgTurn !=null and imgTurn !=''">
+				,imgTurn = #{imgTurn}
+			</if>
+			<if test="imgDetail !=null and imgDetail !=''">
+				,imgDetail = #{imgDetail}
+			</if>
+			<if test="type !=null and type !=''">
+				,type = #{type}
+			</if>
+		</trim>
+		where activeId = #{activeId}
+	</update>
+	
+	
+	<!-- 修改促销活动状态 -->
+	<update id="updateActiveTypeShelves" parameterType="com.air.pojo.entity.ActiveType">
+		update as_active_type
+		set
+			shelves = #{shelves}
+		where activeId in
+		<foreach collection="activeIdList" item="activeId" index="no" open="(" separator="," close=")">
+			#{activeId}
+		</foreach>
+	</update>
+	
+	<!-- 批量删除促销活动信息 -->
+	<delete id="deleteActiveType">
+		delete from as_active_type where activeId in
+		<foreach collection="activeIdList" item="activeId" index="no" open="(" separator="," close=")">
+			#{activeId} 
+		</foreach>
+	</delete>
+	
+	<!-- 查询单个会员信息 -->
+	<select id="selectAppUserInfo" parameterType="com.air.pojo.entity.AppUserInfo" resultType="com.air.pojo.entity.AppUserInfo">
+		SELECT
+			u.appusersId,
+			u.nickname,
+			u.telephone,
+			u.wxnickname,
+			u.headimg,
+			u.sex,
+			u.career,
+			u.age,
+			o.firsttime,
+			o.number,
+			o.amountpay,
+			o.amountfree,
+			o.vounumber
+		FROM
+			as_app_users u
+		LEFT JOIN (
+			SELECT
+				appusersId,
+				MIN(paytime) firsttime,
+				count(ordersId) number,
+				SUM(realfee) amountpay,
+				sum(theoprice - realfee) amountfree,
+				COUNT(voucherId) vounumber
+			FROM
+				as_orders
+			WHERE
+				paystatus = 'yes' AND rechargeId=1
+			GROUP BY
+				appusersId
+		) o ON u.appusersId = o.appusersId
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="appusersId !=null and appusersId !=''">
+				AND u.appusersId =#{appusersId}
+			</if>
+			<if test="nickname != null and nickname != ''">
+				AND u.nickname like CONCAT('%',#{nickname},'%')
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectAllPromotionStatistics" resultType="com.air.pojo.entity.PromotionInfo">
+		SELECT
+			t.activeId,
+			t.years,
+			t.realpay,
+			t. NAME,
+			t.totalpay,
+			aat.activeName,
+		
+		IF (
+			aat.type = 'dis',
+			t.totalpay - t.realpay,
+			0
+		) dispay,
+		
+		IF (
+			aat.type = 'vou',
+			t.totalpay - t.realpay,
+			0
+		) voupay
+		FROM
+			(
+				SELECT
+					o.activeId,
+					SUM(o.num) years,
+					SUM(o.realfee) realpay,
+					SUM(o.theoprice) totalpay,
+					temp. NAME
+				FROM
+					as_orders o
+				LEFT JOIN (
+					SELECT
+						ac.mac,
+						aas. NAME
+					FROM
+						as_air_condition ac
+					LEFT JOIN as_air_series aas ON ac.seriesId = aas.seriesId
+				) temp ON temp.mac = o.airmac
+				WHERE
+					o.paystatus = 'yes'
+				AND o.activeId IS NOT NULL
+				GROUP BY
+					activeId,
+					temp. NAME
+			) t
+		LEFT JOIN as_active_type aat ON t.activeId = aat.activeId
+	</select>
+	
+	<select id="selectPromotionStatistic" parameterType="com.air.pojo.entity.PromotionInfo" resultType="com.air.pojo.entity.PromotionInfo" >
+		SELECT
+			time.activeId,
+			temp. NAME,
+			time.hours,
+			time.years,
+			temp.realpay,
+			temp.totalpay,
+			temp.voupay,
+			temp.dispay
+		FROM
+			(
+				SELECT
+					o.activeId,
+					sum(
+		
+						IF (r.typeName = 'hours', o.num, 0)
+					) hours,
+					sum(
+		
+						IF (r.typeName = 'years', o.num, 0)
+					) years
+				FROM
+					as_orders o
+				LEFT JOIN as_recharge_type r ON o.rechargeId = r.rechargeId
+				WHERE
+					paystatus = 'yes'
+				GROUP BY
+					o.activeId
+			) time
+		LEFT JOIN (
+			SELECT
+				na.activeId,
+				na. NAME,
+				m.realpay,
+				m.totalpay,
+				m.voupay,
+				m.dispay
+			FROM
+				(
+					SELECT
+						a.activeId,
+						s. NAME
+					FROM
+						as_active_type a
+					LEFT JOIN as_air_series s ON a.seriesId = s.seriesId
+				) na
+			LEFT JOIN (
+				SELECT
+					o.activeId,
+					sum(o.realfee) realpay,
+					SUM(o.theoprice) totalpay,
+					sum(
+		
+						IF (
+							v.type = 'vou',
+							o.theoprice - o.realfee,
+							0
+						)
+					) voupay,
+					sum(
+		
+						IF (
+							v.type = 'dis',
+							o.theoprice - o.realfee,
+							0
+						)
+					) dispay
+				FROM
+					as_orders o
+				LEFT JOIN as_vouchers v ON o.voucherId = v.voucherId
+				WHERE
+					paystatus = 'yes'
+				GROUP BY
+					o.activeId
+			) m ON na.activeId = m.activeId
+		) temp ON temp.activeId = time.activeId
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="activeId !=null and activeId!=''">
+				AND temp.activeId =#{activeId}
+			</if>
+			<if test="name !=null and name!=''">
+				AND name like CONCAT('%',#{name},'%')
+			</if>
+		</trim>
+	</select>
+<!-- 	selectActiveTypeByAirMAC  根据空调mac地址查询促销活动-->
+	<select id="selectActiveTypeByAirMAC" resultType="com.air.pojo.entity.ActiveType" parameterType="com.air.pojo.vo.ActiveTypeVo">
+		SELECT
+			ac.activeId,
+			ac.seriesId,
+			ac.hourPrice,
+			ac.yearPrice,
+			ac.discount,
+			ac.areaId,
+			ac.beginTime,
+			ac.endTime,
+			ac.shelves,
+			ac.img,
+			ac.created,
+			ac.modified
+		FROM
+			as_active_type ac
+		LEFT JOIN as_air_condition con ON con.seriesId = ac.seriesId
+		WHERE
+			#{nowTime} BETWEEN ac.beginTime
+		AND ac.endTime
+		AND con.mac = #{airmac}
+	</select>
+	
+	<!-- 根据id获取活动信息 selectActiveTypeById -->
+	<select id="selectActiveTypeById" resultType="com.air.pojo.entity.ActiveType">
+		SELECT
+			activeId,
+			seriesId,
+			activeName,
+			hourPrice,
+			yearPrice,
+			discount,
+			areaId,
+			beginTime,
+			endTime,
+			shelves,
+			img,
+			created,
+			modified,
+			type
+		FROM
+			as_active_type
+		WHERE
+			activeId = #{activeId}
+		AND NOW() BETWEEN beginTime
+		AND endTime
+		AND shelves = true
+	</select>
+	
+	<!--Id 查询所有可以购买的类型 selectRechargeType -->
+	<select id="selectRechargeType" resultType="com.air.pojo.entity.RechargeType">
+		SELECT
+			rechargeId,
+			seriesId,
+			typeName,
+			price,
+			created,
+			modified
+		FROM
+			as_recharge_type
+			WHERE typeName='year'
+	</select>
+	
+<!-- 	selectRechargeTypeById -->
+	<select id="selectRechargeTypeById" resultType="com.air.pojo.entity.RechargeType">
+		SELECT
+			rechargeId,
+			seriesId,
+			typeName,
+			price,
+			created,
+			modified
+		FROM
+			as_recharge_type
+		where
+		 rechargeId=#{rechargeId}
+	</select>
+	
+	<!-- 	按mac地址查看包年包月数据 selectRechargeTypeByMAC-->
+	<select id="selectRechargeTypeByMAC" resultType="com.air.pojo.entity.RechargeType">
+		SELECT
+			t.*
+		FROM
+			as_recharge_type t
+		LEFT JOIN as_air_condition c ON t.seriesId = c.seriesId
+		WHERE
+			c.mac = #{airmac}
+	</select>
+	
+	<!-- 修改包年包时价格 updateRechargeType -->
+	<update id="updateRechargeType">
+		update as_recharge_type
+		set 
+			price=#{price} 
+		where 
+			rechargeId =#{rechargeId}
+	</update>
+	
+	<!-- 查询可以参加的促销活动 selectActives -->
+	<select id="selectActives" resultType="com.air.pojo.vo.BoxAndVoucherVo">
+		SELECT
+			activeId id,
+			activeName,
+			img imgUrl,
+			imgDetail,
+			imgTurn,
+			'C' type
+		FROM
+			as_active_type
+		WHERE
+			shelves = true
+			AND #{nowTime} BETWEEN beginTime
+			AND endTime
+	</select>
+</mapper>

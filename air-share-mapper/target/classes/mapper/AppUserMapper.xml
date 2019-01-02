@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.user.mapper.AppUserMapper">
+<!-- 	根据订单里的用户selectBySql -->
+	<select id="selectBySql" parameterType="java.util.Map" 
+		resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname,reviewStatus, perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified, totalTime,
+			zmf,isDoZmrz,model, useTime,authUrl,perCardUrl,personUrl,idCardUrl,partnerId
+		from 
+			as_app_users
+		${where}
+	</select>
+	
+<!-- 	selectAppUserByZfbUserId -->
+<select id="selectAppUserByZfbUserId"
+		resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname,reviewStatus, perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,totalTime,
+			zmf,isDoZmrz,model, useTime,authUrl,perCardUrl,personUrl,idCardUrl,partnerId
+		from 
+			as_app_users
+		where aliUserId=#{aliUserId}
+	</select>
+	
+	<!-- 通过手机账号查询用户 selectByPhone -->
+	<select id="selectByPhone" parameterType="java.lang.String" resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname,reviewStatus, perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,totalTime,
+			zmf,isDoZmrz,model, useTime,authUrl,perCardUrl,personUrl,idCardUrl,partnerId
+		from 
+			as_app_users
+		where telephone = #{phone}
+	</select>
+	
+	<!-- 通过id查询用户 selectById -->
+	<select id="selectById" resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname, reviewStatus,perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,totalTime,
+			zmf,isDoZmrz,model, useTime,authUrl,perCardUrl,personUrl,idCardUrl,partnerId
+		from 
+			as_app_users
+		where appusersId = #{appusersId}
+	</select>
+	
+	<!-- 根据维修人员的审核状态查询	selectTechnicianByReviewStatus -->
+	<select id="selectTechnicianByReviewStatus" parameterType="com.air.pojo.entity.AppUser" resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname,reviewStatus,reviewStatus, perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,totalTime,
+			zmf,isDoZmrz,model, useTime,authUrl,perCardUrl,personUrl,idCardUrl,partnerId
+		from 
+			as_app_users
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="reviewStatus != null and reviewStatus!=''">
+				AND reviewStatus = #{reviewStatus}
+			</if>
+			<if test="perm != null and perm''">
+				AND perm = #{perm}
+			</if>
+		</trim>
+	</select>
+	<insert id="insertAppUser" parameterType="com.air.pojo.entity.AppUser" useGeneratedKeys="true" keyProperty="appusersId">
+		insert into as_app_users(
+				 wxappopenid , 
+				 aliUserId ,
+				 telephone, 
+				 password,
+				 headimg,
+			 	 nickname,
+			 	 reviewStatus,
+			 	 perm , 
+			 	 sex , 
+			 	 address,
+			 	 vip, 
+			 	 signature,
+			 	 email, 
+			 	 wxunionid ,
+			 	 wxnickname,
+			 	 aliImg,
+			 	 aliname,
+			 	 model,
+			 	 useTime,
+			 	 authUrl,
+			 	 perCardUrl,
+			 	 personUrl,
+			 	 idCardUrl
+			) values (
+				#{wxappopenid},
+				#{aliUserId},
+				#{telephone},
+				#{password},
+				#{headimg},
+				#{nickname},
+				#{reviewStatus},
+				'C',
+				#{sex},
+				#{address},
+				#{vip},
+				#{signature},
+				#{email},
+				#{wxunionid},
+				#{wxnickname},
+				#{aliImg},
+				#{aliname},
+				#{model},
+				#{useTime},
+				#{authUrl},
+				#{perCardUrl},
+				#{personUrl},
+				#{idCardUrl}
+			)
+	</insert>
+		
+	<update id="updateAppUser" parameterType="com.air.pojo.entity.AppUser" >
+		update as_app_users
+			set
+			<trim suffixOverrides=",">
+				<if test="wxappopenid !=null and wxappopenid!= ''">
+					wxappopenid=#{wxappopenid},
+				</if>
+				<if test="aliUserId !=null and aliUserId !=''">
+					aliUserId=#{aliUserId},
+				</if>
+				<if test="telephone !=null and telephone != ''">
+					telephone=#{telephone},
+				</if>
+				<if test="password !=null and password != ''">
+					password=#{password},
+				</if>
+				<if test="headimg !=null and headimg !=''">
+					headimg=#{headimg},
+				</if>
+				<if test="nickname !=null and nickname != ''">
+					nickname=#{nickname},
+				</if>
+				<if test="reviewStatus !=null and reviewStatus != ''">
+					reviewStatus=#{reviewStatus},
+				</if>
+				<if test="perm !=null and perm != ''">
+					perm=#{perm},
+				</if>
+				<if test="vip !=null and vip != ''">
+					vip=#{vip},
+				</if>
+				<if test="partnerId !=null and partnerId != ''">
+					partnerId=#{partnerId},
+				</if>
+				<if test="sex !=null and sex != ''">
+					sex=#{sex},
+				</if>
+				<if test="address !=null and address != ''">
+					address=#{address},
+				</if>
+				<if test="signature !=null">
+					signature=#{signature},
+				</if>
+				<if test="email !=null and email != ''">
+					email=#{email},
+				</if>
+				<if test="wxunionid !=null and wxunionid != ''">
+					wxunionid=#{wxunionid},
+				</if>
+				<if test="wxnickname !=null and wxnickname != ''">
+					wxnickname=#{wxnickname},
+				</if>
+				<if test="authUrl !=null and authUrl != ''">
+					authUrl=#{authUrl},
+				</if>
+				<if test="perCardUrl !=null and perCardUrl != ''">
+					perCardUrl=#{perCardUrl},
+				</if>
+				<if test="personUrl !=null and personUrl != ''">
+					personUrl=#{personUrl},
+				</if>
+				<if test="idCardUrl !=null and idCardUrl != ''">
+					idCardUrl=#{idCardUrl},
+				</if>
+				<if test="balance == 0 or balance !=null and balance != ''">
+					balance=#{balance},
+				</if>
+				<if test="redBoxValue !=null">
+					redBoxValue=#{redBoxValue},
+				</if>
+				<if test="aliImg !=null and aliImg != ''">
+					aliImg=#{aliImg},
+				</if>
+				<if test="aliname !=null and aliname != ''">
+					aliname=#{aliname},
+				</if>
+				<if test="model !=null and model != ''">
+					model=#{model},
+				</if>
+				<if test="useTime !=null and useTime != ''">
+					useTime=#{useTime},
+				</if>
+				<if test="carbon != null and carbon != ''">
+				    carbon=#{carbon},
+				</if>
+				<if test="zmf != null and zmf != ''">
+				    zmf=#{zmf},
+				</if>
+				<if test="isDoZmrz != null and isDoZmrz != ''">
+				    isDoZmrz=#{isDoZmrz},
+				</if>
+				<if test="electricity != null">
+				    electricity=#{electricity},
+				</if>
+				<if test="saveElect != null">
+				    saveElect=#{saveElect},
+				</if>
+				<if test="totalTime != null">
+				    totalTime=#{totalTime},
+				</if>
+				<if test="career != null">
+				    career=#{career},
+				</if>
+				<if test="age != null">
+				    age=#{age},
+				</if>
+			</trim>
+			where appusersId = #{appusersId}
+	</update>
+	
+	<!-- crm端删除用户时修改角色为合作商的crm用户下的技术员信息 updateAppUserPartner -->
+	<update id="updateAppUserPartner">
+		update as_app_users
+			set partnerId = 0,perm='C',reviewStatus='Del',password=""
+			where partnerId=#{crmuserId}
+	</update>
+	
+	<!-- 	selectAppUser -->
+	<select id="selectAppUser" parameterType="com.air.pojo.entity.AppUser"
+		resultType="com.air.pojo.entity.AppUser">
+		select 
+			appusersId,wxappopenid , aliUserId , telephone, password, headimg, carbon, electricity, saveElect,
+			nickname,reviewStatus, perm , sex , address,vip, signature, email,  wxunionid ,
+			wxnickname,balance,redBoxValue,aliImg,aliname,created,modified,model, useTime,totalTime,
+			zmf,isDoZmrz,authUrl,perCardUrl,personUrl,idCardUrl,partnerId,career,age
+		from 
+			as_app_users
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="appusersId !=null and appusersId!=''">
+				AND appusersId =#{appusersId}
+			</if>
+			<if test="aliUserId !=null and aliUserId!=''">
+				AND aliUserId =#{aliUserId}
+			</if>
+			<if test="telephone !=null and telephone!=''">
+				AND telephone =#{telephone}
+			</if>
+			<if test="wxappopenid !=null and wxappopenid!=''">
+				AND wxappopenid =#{wxappopenid}
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectAppUserInfo" parameterType="com.air.pojo.vo.AppUserVo" resultType="com.air.pojo.entity.AppUser">
+		select 
+			au.appusersId,au.wxappopenid , au.aliUserId , au.telephone, au.password, au.headimg, au.carbon, au.electricity, au.saveElect,
+			au.nickname,au.reviewStatus, au.perm , au.sex , au.address,au.vip, au.signature, au.email,  au.wxunionid ,
+			au.wxnickname,au.balance,au.redBoxValue,au.aliImg,au.aliname,au.created,au.modified,au.model, au.useTime,au.totalTime,
+			au.zmf,au.isDoZmrz,au.authUrl,au.perCardUrl,au.personUrl,au.idCardUrl,au.partnerId,cu.username as partnerName
+		from 
+			as_app_users au
+		left join 
+			as_crm_users cu
+		on
+		au.partnerId = cu.crmuserId
+		
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="appusersId !=null and appusersId!=''">
+				AND appusersId =#{appusersId}
+			</if>
+			<if test="aliUserId !=null and aliUserId!=''">
+				AND aliUserId =#{aliUserId}
+			</if>
+			<if test="telephone !=null and telephone!=''">
+				AND telephone =#{telephone}
+			</if>
+			<if test="wxappopenid !=null and wxappopenid!=''">
+				AND wxappopenid =#{wxappopenid}
+			</if>
+			<if test="reviewStatus !=null and reviewStatus!=''">
+				AND reviewStatus =#{reviewStatus}
+			</if>
+			<if test="nickname !=null and nickname!=''">
+				AND nickname like concat('%',#{nickname},'%')
+			</if>
+			<if test="perm !=null and perm!=''">
+				AND perm =#{perm}
+			</if>
+			<if test="partnerId !=null and partnerId !='' and partnerId !=1">
+				AND partnerId =#{partnerId}
+			</if>
+		</trim>
+	</select>
+</mapper>

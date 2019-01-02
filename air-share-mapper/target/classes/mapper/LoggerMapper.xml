@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+    namespace="com.air.user.mapper.LoggerMapper">
+    <!-- 通过type获取支付配置信息     selectConfigBytype -->
+    <select id="selectLogger" resultType="com.air.pojo.entity.Logger">
+        SELECT 
+            loggerId, ip, userId, content, al.created, username
+        FROM 
+            as_logger al
+        LEFT JOIN
+            as_crm_users cu
+        ON al.userId = cu.crmuserId
+        ORDER BY al.created DESC
+    </select>
+    
+    <!-- 添加日志 -->
+    <insert id="addLogger" parameterType="com.air.pojo.entity.Logger">
+        INSERT INTO as_logger (ip, userId, content)
+        VALUES
+            (#{ip}, #{userId}, #{content})
+    </insert>
+    
+    <delete id="delAllLogger" >
+     DELETE FROM as_logger
+    </delete>
+      
+</mapper>

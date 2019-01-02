@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.aircondition.mapper.SeriesMapper">
+	
+	<!-- <resultMap type="com.air.pojo.entity.AppUserAir" id="getUserCondition">
+        <id column="appuserAirId" property="appuserAirId"/>
+        <association property="conditions" column="mac" select="selectAirConditionById">
+        </association>
+    </resultMap> -->
+    
+	
+	<!-- 添加系列 -->
+	<insert id="addSeries" parameterType="com.air.pojo.entity.Series">
+	 	<selectKey keyProperty="repairId" resultType="java.lang.Integer">
+      		select LAST_INSERT_ID() as seriesId
+      	</selectKey>
+	 	INSERT INTO 
+	 		as_air_series(name, specification, type, num, price) 
+	 	VALUES
+	 		(#{name}, #{specification}, #{type}, #{num}, #{price})
+ 	</insert>
+ 	
+ 	<select id="selectSeriesListByType" resultType="com.air.pojo.entity.Series">
+ 	  SELECT
+            se.seriesId, `name`, specification, type, COUNT(ac.mac) num, price, 
+            catena, se.created, se.modified
+        FROM
+            as_air_series se
+        LEFT JOIN as_air_condition ac ON ac.seriesId = se.seriesId
+        WHERE
+            `name` = #{type}
+        GROUP BY
+            se.seriesId
+ 	</select>
+ 	
+ 	<!-- 获取系列列表 -->
+ 	<select id="selectSeriesList" resultType="com.air.pojo.entity.Series">
+ 		SELECT
+		    se.seriesId, `name`, specification, type, COUNT(ac.mac) num, price, 
+		    catena, se.created, se.modified
+		FROM
+		    as_air_series se
+		LEFT JOIN as_air_condition ac ON ac.seriesId = se.seriesId
+		GROUP BY
+		    se.seriesId
+ 	</select>
+ 	
+ 	<!-- 根据系列id查询系列信息 -->
+ 	<select id="selectSeriesById" resultType="com.air.pojo.entity.Series">
+ 		SELECT
+ 			seriesId, name, specification, type, num, catena, created, modified, price
+ 		FROM
+ 			as_air_series
+ 		WHERE
+ 			seriesId = #{seriesId}
+ 	</select>
+ 	
+ 	<!-- 库存减1 -->
+ 	<update id="seriesNumReduceOne" parameterType="com.air.pojo.entity.Series">
+ 		UPDATE 
+ 			as_air_series 
+ 		SET
+ 			num = num-1
+ 		WHERE
+ 			seriesId = #{seriesId}
+ 	</update>
+ 	
+ 	<!-- 根据系列ID 修改系列信息 -->
+ 	<update id="updateSeries">
+ 		UPDATE 
+ 			as_air_series 
+ 		<trim prefix="set" suffixOverrides=",">
+			<if test="name != null and name != ''">
+				name = #{name},
+			</if>
+			<if test="specification != null and specification != ''">
+				specification = #{specification},
+			</if>
+			<if test="type != null and type != ''">
+				type = #{type},
+			</if>
+			<if test="num != null and num != ''">
+				num = #{num},
+			</if>
+			<if test="catena != null and catena != ''">
+				catena = #{catena},
+			</if>
+			<if test="price != null">
+                price = #{price},
+            </if>
+		</trim>
+ 		WHERE
+ 			seriesId = #{seriesId}
+ 	</update>
+ 	
+ 	<!-- 删除系列 -->
+ 	<delete id="deleteSeries">
+	 	DELETE FROM
+	 		as_air_series
+	 	WHERE
+	 		seriesId = #{seriesId}
+ 	</delete>
+</mapper>
+
+

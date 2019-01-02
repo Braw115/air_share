@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.appinfo.mapper.AirInfoMapper">
+
+	<insert id="insertConfig" parameterType="com.air.pojo.entity.AppInfo">
+		insert into as_app_info (
+			type, content
+		) values (
+			#{type}, #{content}
+		)
+	</insert>
+	
+	<update id="updateConfig" parameterType="com.air.pojo.entity.AppInfo">
+		update as_app_info set
+			<trim prefixOverrides=",">
+				<if test="type!=null and type!=''">
+					,type=#{type}
+				</if>
+				<if test="content!=null and content!=''">
+					,content=#{content}
+				</if>
+			</trim>
+		where appInfoId=#{appInfoId}	
+	</update>
+	
+	<delete id="deleteConfig" >
+		delete from as_app_info where appinfoId = #{appinfoId}
+	</delete>
+	
+	<select id="selectConfig" 
+		resultType="com.air.pojo.entity.AppInfo">
+		SELECT 
+			appInfoId,type,content,created,modified
+		FROM 
+			as_app_info	
+	</select>
+
+	
+	<!-- 通过id获取支付配置信息 	selectConfigById -->
+	<select id="selectConfigById" 
+		resultType="com.air.pojo.entity.AppInfo">
+		SELECT 
+			appInfoId,type,content,created,modified
+		FROM 
+			as_app_info	
+		where 
+			appInfoId = #{appInfoId}
+	</select>
+	
+	<!-- 通过type获取支付配置信息 	selectConfigBytype -->
+	<select id="selectConfigBytype" parameterType="com.air.pojo.entity.AppInfo"
+		resultType="com.air.pojo.entity.AppInfo">
+		SELECT 
+			appInfoId,type,content,created,modified
+		FROM 
+			as_app_info	
+		where
+			type =#{type}
+	</select>
+	
+	<!-- type或content模糊查询获取支付配置信息 	selectConfigByAppInfo -->
+	<select id="selectConfigByAppInfo" parameterType="com.air.pojo.entity.AppInfo"
+		resultType="com.air.pojo.entity.AppInfo">
+		SELECT 
+			appInfoId,type,content,created,modified
+		FROM 
+			as_app_info	
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test="type!=null and type != '' ">
+				AND type like CONCAT("%",#{type},"%")		
+			</if>
+			<if test="content!=null and content != '' ">
+				AND content like CONCAT("%",#{content},"%")	
+			</if>
+		</trim>	
+	</select>
+	
+	<!-- 	selectContentBytype -->
+</mapper>

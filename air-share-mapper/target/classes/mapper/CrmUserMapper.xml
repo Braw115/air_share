@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.crmuser.mapper.CrmUserMapper">
+
+	<insert id="insertCrmUser" parameterType="com.air.pojo.entity.CrmUser">
+		INSERT INTO as_crm_users (
+				username,
+				password,
+				areaId,
+				sex,
+				phone,
+				email,
+				address,
+				joinTime,
+				commission,
+				proportion
+			)
+		VALUES
+			(
+				#{username},
+				#{password},
+				#{areaId},
+				#{sex},
+				#{phone},
+				#{email},
+				#{address},
+				#{joinTime},
+				#{commission},
+				#{proportion}
+			)
+	</insert>
+	<select id="selectCrmUser" parameterType="com.air.pojo.entity.CrmUser" resultType="com.air.pojo.entity.CrmUser">
+		SELECT
+			cu.crmuserId,
+			cu.username,
+			cu.password,
+			cu.areaId,
+			cu.sex,
+			cu.phone,
+			cu.email,
+			cu.address,
+			cu.joinTime,
+			cu.commission,
+			cu.proportion,
+			cu.created,
+			cu.modified,
+			ar.name as areaName
+		FROM
+			as_crm_users cu
+		LEFT JOIN
+			as_area ar
+		ON
+			cu.areaId = ar.areaId
+		<where>
+			<trim prefixOverrides="and">
+				<if test="crmuserId !=null and crmuserId!=''">
+					and cu.crmuserId =#{crmuserId}
+				</if>
+				<if test="username != null and crmuserId !=''">
+					and cu.username like concat('%',#{username},'%')
+				</if>
+				<if test="areaId != null and areaId != ''">
+					and cu.areaId=#{areaId}
+				</if>
+				<if test="phone != null and phone != ''">
+					and cu.phone=#{phone}
+				</if>
+				<if test="email != null and email!=''">
+					and cu.email=#{email}
+				</if>
+			</trim>
+		</where>
+		ORDER BY cu.created DESC
+		
+	</select>
+	<!-- 	修改用户 -->
+	<update id="updateCrmUser" parameterType="com.air.pojo.entity.CrmUser">
+		UPDATE as_crm_users
+		SET 
+			<trim prefixOverrides=",">
+				<if test="username != null and username != ''">
+					,username=#{username}
+				</if>
+				<if test="password != null and password != ''">
+					,password=#{password}
+				</if>
+				<if test="areaId != null and areaId != ''">
+					,areaId=#{areaId}
+				</if>
+				<if test="sex != null and sex != ''">
+					,sex=#{sex}
+				</if>
+				<if test="phone != null and phone != ''">
+					,phone=#{phone}
+				</if>
+				<if test="email != null and email != ''">
+					,email=#{email}
+				</if>
+				<if test="address != null and address != ''">
+					,address=#{address}
+				</if>
+				<if test="joinTime != null and joinTime != ''">
+					,joinTime=#{joinTime}
+				</if>
+				<if test="commission != null">
+					,commission=#{commission}
+				</if>
+				<if test="proportion != null and proportion != '' and proportion != '0'">
+					,proportion=#{proportion}
+				</if>
+			</trim>
+		WHERE
+			crmuserId = #{crmuserId}
+	</update>
+	
+	<delete id="deleteCrmUser" parameterType="int">
+		delete from as_crm_users where crmuserId = #{crmuserId} and username != 'admin'
+	</delete>
+	
+	<!-- 根据用户账号查询 -->
+	<select id="selectCrmUserByUsername" parameterType="java.lang.String"
+		resultType="com.air.pojo.entity.CrmUser">
+		SELECT
+			crmuserId,
+			username,
+			password,
+			areaId,
+			sex,
+			phone,
+			email,
+			address,
+			joinTime,
+			commission,
+			proportion,
+			created,
+			modified
+		FROM
+			as_crm_users
+		where	
+			username = #{username}
+	</select>
+	
+	<!-- 	角色相关 -->
+	<insert id="insertRole" parameterType="com.air.pojo.entity.Role">
+		INSERT INTO as_role (roleName)
+		VALUES
+		(#{roleName})	
+	</insert>
+	
+	<select id="selectRole" parameterType="com.air.pojo.entity.Role"
+		resultType="com.air.pojo.entity.Role">
+		select 
+			roleId,roleName,created,modified
+		from as_role
+		<where>
+			<trim prefixOverrides="and" >
+				<if test="roleId != null and roleId != ''">
+					roleId = #{roleId}
+				</if>
+				<if test="roleName != null and roleName != ''">
+					roleName =#{roleName}
+				</if>
+			</trim>
+		</where>
+	</select>
+	
+	<update id="updateRole" parameterType="com.air.pojo.entity.Role">
+		update as_role
+		set roleName=#{roleName}
+		where roleId=#{roleId}
+	</update>
+	
+	<delete id="deleteRole" >
+		DELETE
+		FROM
+			as_role
+		WHERE
+			roleId = #{roleId}
+		AND roleName != 'owner'
+		AND roleName != 'partner'
+		AND roleName != 'root'
+		AND roleName != 'admin'
+	</delete>
+	
+	<!-- 	用户与角色 -->
+	<insert id="insertRoleAndCrmUser" parameterType="com.air.pojo.entity.CrmUserAndRole">
+		insert into as_user_role(
+			roleId,crmuserId
+		) values (
+			#{roleId},#{crmuserId}
+		) 
+	</insert>
+	
+	<select id="selectRoleByCrmUser" parameterType="com.air.pojo.entity.CrmUser"
+		resultType="com.air.pojo.entity.Role">
+		SELECT
+			roleId,
+			roleName,
+			created,
+			modified
+		FROM
+			as_role
+		WHERE
+			roleId IN (
+				SELECT
+					roleId
+				FROM
+					as_user_role
+				WHERE
+					crmuserId=#{crmuserId}
+			)
+	</select>
+	
+	<select id="selectCrmUserByRoleName" 
+		resultType="com.air.pojo.entity.CrmUser">
+		SELECT
+			crmuserId,
+			username
+		FROM
+			as_crm_users
+		WHERE
+			crmuserId IN (
+				SELECT
+					u.crmuserId
+				FROM
+					as_user_role u
+				LEFT JOIN as_role r ON u.roleId = r.roleId
+				WHERE
+					r.roleName = #{roleName}
+			)
+	</select>
+	<!-- 	 and roleId = #{roleId} -->
+	<delete id="deleteRoleByCrmUser" parameterType="com.air.pojo.entity.RoleAndPerm">
+		delete from as_user_role where crmuserId = #{crmuserId}
+	</delete>
+	
+	<!-- 	deleteRoleAndCrmUser -->
+	<delete id="deleteRoleAndCrmUser">
+		delete from as_user_role where roleId = #{roleId} or crmuserId = #{crmuserId}
+	</delete>
+	
+	<!-- 	权限相关 -->
+	<select id="selectPerm" parameterType="com.air.pojo.entity.Perm"
+		resultType="com.air.pojo.entity.Perm">
+		select 
+			permId,permName,description,created,modified
+		from as_perm
+		<where>
+			<trim prefixOverrides="and">
+				<if test="permId!=null and permId !=''">
+					and permId = #{permId} 
+				</if>
+				<if test="permName!=null and permName!=''">
+					and permName =#{permName}
+				</if>
+			</trim>
+		</where>
+	</select>
+	
+	<!-- 	角色与权限 -->
+	<insert id="insertPermForRole" parameterType="com.air.pojo.entity.RoleAndPerm">
+		insert into as_role_perm(
+			roleId , permId
+		) values 
+		<foreach collection="roleAndPermList" item="roleAndPerm" separator=",">
+		 (
+			#{roleAndPerm.roleId},#{roleAndPerm.permId}
+		)
+		</foreach>
+	</insert>
+	
+	<select id="selectPermByRole" parameterType="com.air.pojo.entity.Role"
+		resultType="com.air.pojo.entity.Perm">
+		SELECT
+			permId,
+			permName,
+			description,
+			created,
+			modified
+		FROM
+			as_perm
+		WHERE
+			permId IN (
+				SELECT
+					permId
+				FROM
+					as_role_perm
+				WHERE
+					roleId =#{roleId}
+			)
+	</select>
+	
+	<delete id="deletePerm">
+		delete from as_role_perm  where roleId =#{roleId} 
+	</delete>
+	<!-- 根据账号查找业主 -->
+	<select id="getUserByUserNameAndRole" resultType="com.air.pojo.entity.CrmUser" parameterType="java.util.Map">
+	   SELECT
+		    cu.crmuserId, cu.username, ar.roleName
+		FROM
+		    as_crm_users cu
+		LEFT JOIN as_user_role ur ON cu.crmuserId = ur.crmuserId
+		LEFT JOIN as_role ar ON ur.roleId = ar.roleId
+		<trim prefix="where" prefixOverrides="AND|OR">
+			<if test=" username != null and username !=''">
+				AND cu.username=#{username}
+			</if>
+			<if test=" crmuserId != null and crmuserId !=''">
+				AND cu.crmuserId=#{crmuserId}
+			</if>
+			<if test="roleName != null and roleName !=''">
+				AND ar.roleName = #{roleName}
+			</if>
+		</trim>
+	</select>
+
+	<!-- selectRoleAndCrmUser -->
+	<select id="selectRoleAndCrmUser" parameterType="com.air.pojo.entity.CrmUserAndRole" resultType="com.air.pojo.entity.CrmUserAndRole">
+		SELECT
+			roleId,
+			crmuserId
+		FROM
+			as_user_role
+			<trim prefix="where" prefixOverrides="AND|OR">
+				<if test="roleId !=0 and roleId !=null">
+					AND roleId=#{roleId}
+				</if>
+				<if test="crmuserId !=0 and crmuserId !=null">
+					AND roleId=#{roleId}
+				</if>
+			</trim>
+	</select>
+	
+	<!--用户添加权限 -->
+	<insert id="insertPermForUser" parameterType="com.air.pojo.entity.UserAndPerm">
+		insert into as_user_perm(
+			crmUserId,permId
+		) values 
+		<foreach collection="userAndPermList" item="userAndPerm" separator=",">
+		 (
+			#{userAndPerm.crmUserId},#{userAndPerm.permId}
+		)
+		</foreach>
+	</insert>
+	<!-- 查询用户权限  -->
+	<select id="selectPermByUserId" resultType ="com.air.pojo.entity.Perm">
+		SELECT
+			permId,
+			permName,
+			description,
+			created,
+			modified
+		FROM
+			as_perm
+		WHERE
+			permId IN (
+				SELECT
+					permId
+				FROM
+					as_user_perm
+				WHERE
+					crmuserId =#{crmUserId}
+			)
+	</select>
+	
+	<!--删除权限  -->
+	<delete id="delPermByUser">
+		delete from as_user_perm 
+		where crmUserId = #{crmUserId}
+	</delete>
+	
+</mapper>

@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.aircondition.mapper.AirConditionMapper">
+	
+	<resultMap type="com.air.pojo.entity.AppUserAir" id="getUserCondition">
+        <id column="appuserAirId" property="appuserAirId"/>
+        <result column="mac" property="mac" />
+        <association property="conditions" column="mac" select="selectAirConditionById">
+        </association>
+    </resultMap>
+    
+    
+    <resultMap type="com.air.pojo.vo.AirConditionVO" id="airconditionMap">
+    	<id column="mac" property="mac"/>
+    	<result property="longitude" column="longitude"/>
+    	<result property="latitude" column="latitude"/>
+    	<result property="newUseTime" column="newUseTime"/>
+    	<result property="newRepairTime" column="newRepairTime"/>
+    	<result property="fault" column="fault"/>
+    	<result property="created" column="created"/>
+    	<result property="type" column="type"/>
+    	<result property="name" column="name"/>
+    	<result property="username" column="username"/>
+    	<result property="useStatus" column="useStatus"/>
+    	<result property="location" column="location"/>
+    	<!-- <association property="repairs"
+            javaType="com.air.pojo.entity.Repair">
+            <id property="repairId" column="repairId" javaType="java.lang.Integer" />
+        </association> -->
+    	 <collection property="repairs" ofType="com.air.pojo.entity.Repair" column="mac" select="selectRepair">
+        </collection>
+    </resultMap>
+    
+    <select id="selectRepair" parameterType="java.lang.String" resultType="com.air.pojo.entity.Repair">
+	    SELECT
+            ar.repairId, ar.content,  ar.repairTime, ar.result
+        FROM
+            as_repair ar
+        WHERE
+            ar.airmac = #{mac}
+            AND ar.status IN('processed', 'evaluated')
+    </select>
+	<!-- 增加数据-->
+	<!-- Integer addMyTest(Mytest mytest); -->
+	<!-- 查找所有的空调 -->
+	<select id="selectAllAirCondition" parameterType="com.air.pojo.vo.AirConditionVO" resultMap="airconditionMap">
+		SELECT
+		    mac, operationTime, longitude, latitude, newUseTime, newRepairTime, 
+		    lastUpdate, fault, ac.seriesId, enterpriseId, ac.areaId, ac.created,
+		    ac.modified, se.type, se.`name`, username, useStatus, location, aa.name areaName,hour,power,powerType,ac.time,ac.partnerId,ac.enterpriseId
+		FROM
+		    as_air_condition ac
+		<!-- LEFT JOIN as_repair ar ON (ac.mac = ar.airmac) AND ar.status IN('processed', 'evaluated') -->
+		LEFT JOIN as_air_series  se ON ac.seriesId = se.seriesId
+		LEFT JOIN as_crm_users ON enterpriseId = crmuserId
+		LEFT JOIN as_area aa ON aa.areaId = ac.areaId
+		<trim prefix="WHERE" prefixOverrides="AND |OR">
+			<if test="seriesId != null and seriesId != ''">
+				AND ac.seriesId = #{seriesId}
+			</if>
+			<if test="areaId != null and areaId != ''"> 
+				AND ac.areaId = #{areaId}
+			</if>
+			<if test="enterpriseId != null and enterpriseId != ''"> 
+				AND enterpriseId = #{enterpriseId}
+			</if>
+			<if test="mac != null and mac != ''"> 
+				AND mac LIKE CONCAT('%',#{mac},'%')
+			</if>
+			<if test="enterpriseId != null and enterpriseId != ''"> 
+				AND enterpriseId = #{enterpriseId}
+			</if>
+			<if test="partnerId != null and partnerId != ''"> 
+				AND partnerId = #{partnerId}
+			</if>
+			<!-- <if test="type != null and type != ''"> 
+				AND type LIKE CONCAT('%',#{type},'%')
+			</if> -->
+			<if test="name != null and name != ''"> 
+				AND se.name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<if test="beginDate != null and beginDate != ''"> 
+				AND ac.created <![CDATA[>=]]> #{beginDate}
+			</if>
+			<if test="endDate != null and endDate != ''"> 
+				AND ac.created <![CDATA[<=]]> #{endDate}
+			</if>
+			<if test="areaName != null and areaName != ''">
+			     AND aa.name LIKE CONCAT('%',#{areaName},'%')
+			</if>
+			<if test="areaName != null and areaName != ''">
+			     AND aa.name LIKE CONCAT('%',#{areaName},'%')
+			</if>
+		</trim>	
+	</select>
+	
+	<!-- 根据空调ID查找空调信息 -->
+	<select id="selectAirConditionById"
+		resultType="com.air.pojo.entity.AirCondition">
+		SELECT 
+			mac, electricity, useTime, operationTime, longitude, latitude, newUseTime, newRepairTime, 
+			balance, lastUpdate, fault, seriesId, enterpriseId, ac.areaId, useStatus, windSpeed, model, 
+			ac.created, ac.modified, username, enterpriseId, partnerId,hour,power, voltage,time,powerType,location,flag
+		FROM 
+			as_air_condition ac
+		LEFT JOIN
+		    as_crm_users cu
+		ON 
+			ac.enterpriseId = cu.crmuserId
+		WHERE
+			mac = #{mac}
+			
+	</select>
+	
+	<!-- 根据空调ID查找空调信息 -->
+	<select id="selectAirConditionByMacAndUserId"
+		resultType="com.air.pojo.entity.AirCondition">
+		SELECT 
+			ac.mac, ac.electricity, ac.useTime, ac.operationTime, ac.longitude, ac.latitude, ac.newUseTime, ac.newRepairTime, 
+			ac.balance, ac.lastUpdate, ac.fault, ac.seriesId, ac.enterpriseId, ac.areaId, ac.useStatus, ac.windSpeed, ac.model, 
+			ac.created, ac.modified, cu.username, ac.enterpriseId, ac.partnerId,ac.hour,ac.power, ac.voltage,ap.time,ac.powerType,ac.location,ac.flag
+		FROM 
+			as_air_condition ac
+		LEFT JOIN
+		    as_crm_users cu
+		ON 
+			ac.enterpriseId = cu.crmuserId
+		LEFT JOIN
+			as_appusers_air ap
+		ON
+			ac.mac = ap.mac
+		WHERE
+			ac.mac = #{mac}
+		AND ap.appusersId = #{appusersId}
+				
+	</select>
+	
+	<!-- 根据用户ID查询绑定的空调 -->
+	<select id="selectAirConditionByUserId" resultMap="getUserCondition">
+		SELECT 
+			appuserAirId, appusersId, mac, created, modified, note
+		FROM 
+			as_appusers_air
+		WHERE
+			appusersId = #{appusersId}
+	</select>
+	
+	<!-- 根据appuserId和mac查询绑定记录 -->
+	<select id="selectAppUserAirByUseIdAndMac" resultType="com.air.pojo.entity.AppUserAir">
+		SELECT 
+			appuserAirId, appusersId, mac, created, modified, note,time,model
+		FROM 
+			as_appusers_air
+		WHERE
+			appusersId = #{appusersId} 
+		AND mac = #{mac}
+	</select>
+	
+	<!-- 根据用户ID查询绑定的空调 -->
+	<select id="selectAirConditionByIdAndUser"  resultMap="getUserCondition">
+		SELECT 
+			appuserAirId, appusersId, mac, created, modified, note
+		FROM 
+			as_appusers_air
+		WHERE
+			appusersId = #{appusersId}
+		AND
+			mac = #{mac}
+	</select>
+	
+	
+	<!-- 根据App用户ID 空调MAC修改空用户空调信息 -->
+	<update id="updateAirConditionNote" parameterType="com.air.pojo.entity.AppUserAir">
+		UPDATE 
+			as_appusers_air
+			
+		 <trim prefix="set" suffixOverrides=","> 
+            <if test="note != null and note != ''">
+                note = #{note},
+            </if>
+            <if test="time != null and time != ''">
+                time = #{time},
+            </if>
+            <if test="model != null and model != ''">
+                model = #{model},
+            </if>
+            
+		</trim>
+		WHERE
+			mac = #{mac}
+		AND
+			appusersId = #{appusersId}
+	</update>
+	
+	<!-- APP用户绑定空调 -->
+	<insert id="addAppUserAir" parameterType="com.air.pojo.entity.AppUserAir">
+	 	<selectKey keyProperty="appuserAirId" resultType="java.lang.Integer">
+      		select LAST_INSERT_ID() as repairId
+      	</selectKey>
+	 	INSERT INTO
+	 		as_appusers_air(appusersId, mac, note) 
+	 	VALUES
+	 		(#{appusersId}, #{mac}, #{note})
+ 	</insert>
+	
+	<!-- 修改空调的信息 -->
+	<update id="updateAirCondition" parameterType="com.air.pojo.entity.AirCondition">
+		UPDATE 
+			as_air_condition
+		<trim prefix="set" suffixOverrides=",">	
+			<if test="longitude != null and longitude != ''">
+				longitude = #{longitude},
+			</if>
+			<if test="latitude != null and latitude != ''">
+				latitude = #{latitude},
+			</if>
+			<if test="newRepairTime != null and newRepairTime != ''">
+				newRepairTime = #{newRepairTime},
+			</if>
+			<if test="fault != null">
+				fault = #{fault},
+			</if>
+			<if test="useStatus != null or useStatus == 0">
+			     useStatus = #{useStatus},
+			</if>
+			<if test="location != null">
+			     location = #{location},
+			</if>
+			<if test="seriesId != null and seriesId != ''">
+				seriesId = #{seriesId},
+			</if>
+			<if test="enterpriseId != null">
+				enterpriseId = #{enterpriseId},
+			</if>
+			<if test="areaId != null">
+				areaId = #{areaId},
+			</if>
+			<if test="partnerId != null">
+			    partnerId = #{partnerId},
+			</if>
+			<if test="power != null">
+			    power = #{power},
+			</if>
+			<if test="powerType != null">
+			    powerType = #{powerType},
+			</if>
+			<if test="hour != null">
+			    hour = #{hour},
+			</if>
+			<if test="voltage != null">
+			    voltage = #{voltage},
+			</if>
+			<if test="time != null and time != ''">
+			    time = #{time},
+			</if>
+		</trim>
+        WHERE mac=#{mac} <!-- <if test="useStatus == 0"> and useStatus = 0</if> -->
+	</update>
+	
+	<!-- 添加空调 -->
+	<insert id="addAirCondition" parameterType="com.air.pojo.entity.AirCondition">
+	 	INSERT INTO 
+	 		as_air_condition(mac, useTime, longitude, latitude, enterpriseId, location, seriesId, areaId, partnerId,hour,power,powerType) 
+	 	VALUES
+	 		(#{mac}, #{useTime}, #{longitude}, #{latitude}, #{enterpriseId}, #{location}, #{seriesId}, #{areaId}, #{partnerId},#{hour},#{power},#{powerType})
+ 	</insert>
+ 	
+ 	<!-- 查询系列列表 -->
+	<select id="selectSeriesList" parameterType="com.air.pojo.vo.SeriesVO"
+		resultType="com.air.pojo.entity.Series">
+		SELECT 
+			seriesId, name, specification, type, num, catena, created, modified
+		FROM 
+			as_air_series
+		<trim prefix="WHERE" prefixOverrides="AND |OR">
+			<if test="name != null and name != ''"> 
+				AND name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<if test="type != null and type != ''"> 
+				AND type LIKE CONCAT('%',#{type},'%')
+			</if>
+			<if test="catena != null and catena != ''"> 
+				AND catena LIKE CONCAT('%',#{catena},'%')
+			</if>
+			<if test="minNum != null and minNum != ''"> 
+				AND num <![CDATA[>=]]> #{minNum}
+			</if>
+			<if test="maxNum != null and maxNum != ''"> 
+				AND num <![CDATA[<=]]> #{maxNum}
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 根据ID删除空调信息 -->
+	<delete id="deleteAirCondition" parameterType="java.lang.String">
+		DELETE FROM 
+			as_air_condition
+		WHERE
+			mac = #{mac}
+	</delete>
+	
+		<!-- 根据ID删除空调信息 -->
+	<delete id="deleteConditionInfo" parameterType="java.lang.String">
+		DELETE FROM 
+			as_condition_info
+		WHERE
+			mac = #{mac}
+	</delete>
+	
+	<!-- 根据用户ID和MAC删除中间表记录 -->
+    <delete id="deleteUserAirByUserAndAir" parameterType="java.lang.String">
+        DELETE FROM 
+            as_appusers_air
+        WHERE
+            mac = #{mac}
+            AND appusersId = #{appusersId}
+    </delete>
+    
+    <insert id="addConditionInfo" parameterType="com.air.pojo.entity.ConditionInfo">
+        INSERT INTO 
+            as_condition_info(mac, status, model, windSpeed, swing, sleep, strong, timing, dryHot) 
+        VALUES
+            (#{mac}, #{status}, #{model}, #{windSpeed}, #{swing}, #{sleep}, #{strong}, #{timing}, #{dryHot})
+    </insert>
+    
+    <select id="getConditionInfoByMac" resultType="com.air.pojo.entity.ConditionInfo">
+        SELECT 
+            mac, status, model, windSpeed, swing, sleep, strong, timing, temp, dryHot, created, modified,appuserId
+        FROM 
+            as_condition_info
+        WHERE
+            mac = #{mac}
+    </select>
+    
+    <update id="updateConditionInfoByMac" parameterType="com.air.pojo.entity.ConditionInfo">
+        UPDATE 
+            as_condition_info
+        <trim prefix="set" suffixOverrides=","> 
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+            <if test="model != null and model != ''">
+                model = #{model},
+            </if>
+            <if test="windSpeed != null and windSpeed != ''">
+                windSpeed = #{windSpeed},
+            </if>
+            <if test="swing != null and swing != ''">
+                swing = #{swing},
+            </if>
+            <if test="sleep != null and sleep != ''">
+                sleep = #{sleep},
+            </if>
+            <if test="strong != null and strong != ''">
+                strong = #{strong},
+            </if>
+                timing = #{timing},
+            <if test="temp != null">
+                temp = #{temp},
+            </if>
+            <if test="dryHot != null and dryHot != ''">
+                dryHot = #{dryHot},
+            </if>
+            <if test="status != null and status != ''">
+                appuserId = #{appuserId}
+            </if>
+        </trim>
+        WHERE mac=#{mac}
+    </update>
+  
+	<!-- 查询绑定时间达到或超过一个月的数据 selectAirConditionTimeOut -->
+	<select id="selectAppUserAirTimeOut" resultType="com.air.pojo.entity.AppUserAir">
+		SELECT
+			appuserAirId,
+			appusersId,
+			created,
+			mac,
+			modified,
+			note
+		FROM
+			as_appusers_air
+		WHERE
+			NOW() > ADDDATE(created, INTERVAL 30 DAY)
+	</select>
+		
+	<!-- 批量删除达到或超过一个月的绑定数据 deleteAppUserAir -->
+	<delete id="deleteAppUserAir">
+		DELETE
+		FROM
+			as_appusers_air
+		WHERE
+			appuserAirId IN 
+		<foreach collection="list" item="appUserAir" close=")" open="(" separator=",">
+			#{appUserAir.appuserAirId}
+		</foreach>
+	</delete>
+    
+	<!-- 通过mac地址获取空调的绑定信息 selectBindingInfoByMac-->	
+	<select id="selectBindingInfoByMac" resultType="com.air.pojo.vo.AppUserAirVo">
+		SELECT
+			aa.appuserAirId,
+			aa.appusersId,
+			aa.created,
+			aa.mac,
+			aa.modified,
+			aa.note,
+			au.telephone
+		FROM
+			as_appusers_air aa
+		LEFT JOIN as_app_users au ON aa.appusersId = au.appusersId
+		WHERE
+			aa.mac = #{mac}
+	</select>
+	
+	<!-- 查询所有的空调mac地址 selectAllAirMac -->
+	<select id="selectAllAirMac" resultType="java.lang.String">
+		SELECT
+			mac
+		FROM
+			as_air_condition
+	</select>
+	
+	<!-- 插入正在使用的空调的实时数据 insertAirUseInfo -->
+	<insert id="insertAirUseInfo" parameterType="com.air.pojo.entity.AirUseInfo">
+		INSERT INTO as_air_useInfo (
+			airMac,
+			eleCurrent,
+			power,
+			voltage
+		)
+		VALUES
+		(#{airMac},#{eleCurrent},#{power},#{voltage})
+	</insert>
+    
+    <!-- 批量添加空调 -->
+	<insert id="insertAirConditionList" parameterType="java.util.List">
+	 	INSERT INTO 
+	 		as_air_condition(mac, useTime, longitude, latitude, enterpriseId, location, seriesId, areaId, partnerId,hour,power,powerType) 
+	 	VALUES
+	 	<foreach collection="listAir" item="air" separator=",">
+	 		(#{air.mac}, #{air.useTime}, #{air.longitude}, #{air.latitude}, #{air.enterpriseId}, #{air.location}, #{air.seriesId}, #{air.areaId}, #{air.partnerId},#{air.hour},#{air.power},#{air.powerType})
+	 	</foreach>
+ 	</insert>
+ 	
+ 	<!-- 批量添加空调信息 -->
+ 	<insert id="insertConditionInfoList" parameterType="java.util.List">
+        INSERT INTO 
+            as_condition_info(mac, status, model, windSpeed, swing, sleep, strong, timing, dryHot) 
+        VALUES
+        <foreach collection="listInfo" item="info" separator=",">
+            (#{info.mac}, #{info.status}, #{info.model}, #{info.windSpeed}, #{info.swing}, #{info.sleep}, #{info.strong}, #{info.timing}, #{info.dryHot})
+        </foreach>
+    </insert>
+</mapper>
+
+

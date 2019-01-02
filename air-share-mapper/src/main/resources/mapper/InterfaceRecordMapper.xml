@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+	namespace="com.air.interfacerecord.mapper.InterfaceRecordMapper">
+	
+	<!-- <resultMap type="com.air.pojo.entity.AppUserAir" id="getUserCondition">
+        <id column="appuserAirId" property="appuserAirId"/>
+        <association property="conditions" column="mac" select="selectAirConditionById">
+        </association>
+    </resultMap> -->
+    
+	<!-- selectRepairByCondition; -->
+	<!-- 查询接口记录 -->
+	<select id="selectInterfaceRecord"
+		parameterType="com.air.pojo.vo.InterfaceRecordVO" resultType="com.air.pojo.entity.InterfaceRecord">
+		SELECT 
+			interfaceId, url, param, description, method, created, modified
+		FROM 
+			as_interface
+		<trim prefix="WHERE" prefixOverrides="AND |OR">
+		  <if test="interfaceId != null and interfaceId !=''">AND interfaceId = #{interfaceId} </if>  
+		  <if test="method != null and method != ''">AND method LIKE CONCAT('%',#{method},'%') </if>
+		  <if test="url != null and url !=''">AND url LIKE CONCAT('%',#{url},'%') </if>
+		  <if test="description != null and description != ''">AND description LIKE CONCAT('%',#{description},'%')</if>
+		</trim>	
+	</select>
+	
+	
+	
+	<!-- 添加接口记录 -->
+	<insert id="addInterfaceRecord" parameterType="com.air.pojo.entity.InterfaceRecord">
+	 	<selectKey keyProperty="interfaceId" resultType="java.lang.Integer">
+      		select LAST_INSERT_ID() as interfaceId
+      	</selectKey>
+	 	INSERT INTO 
+	 		as_interface(url, param, description, method) 
+	 	VALUES
+	 		(#{url}, #{param}, #{description}, #{method})
+ 	</insert>
+
+	
+	<!-- 修改接口记录 -->
+	<update id="updateInterfaceRecord" parameterType="com.air.pojo.entity.InterfaceRecord">
+		UPDATE 
+			as_interface
+		<trim prefix="set" suffixOverrides=",">
+			<if test="url != null and url != ''">
+				url=#{url},
+			</if>
+			<if test="param != null and param != ''">
+				param=#{param},
+			</if>
+			<if test="description != null and description != ''">
+				description=#{description},
+			</if>
+			<if test="method != null and method != ''">
+				method=#{method},
+			</if>
+		</trim>
+		WHERE
+			interfaceId=#{interfaceId}
+	</update>
+	
+	<!-- 删除接口记录根据ID -->
+	<delete id="deleteInterfaceRecord">
+	   DELETE FROM
+	       as_interface
+	   WHERE
+	       interfaceId=#{interfaceId}
+	</delete>
+</mapper>
+
+

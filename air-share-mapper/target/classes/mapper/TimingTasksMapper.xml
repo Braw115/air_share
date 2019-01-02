@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+    namespace="com.air.timingtasks.mapper.TimingTasksMapper">
+    
+    <!-- <resultMap type="com.air.pojo.entity.AppUserAir" id="getUserCondition">
+        <id column="appuserAirId" property="appuserAirId"/>
+        <association property="conditions" column="mac" select="selectAirConditionById">
+        </association>
+    </resultMap> -->
+    
+    
+    
+    <!-- 查询未执行的定时任务 -->
+    <select id="selectNotPerformedTask" resultType="com.air.pojo.entity.TimingTasks">
+        SELECT
+            `taskId`, `order`, `userId`, `execute`, `exeTime`, created, mac
+        FROM
+            as_timing_task
+        WHERE
+            created <![CDATA[<]]> NOW() AND `execute` = 0
+    </select>
+    
+    <!-- 删除定时任务 -->
+    <delete id="deleteTimingTasks">
+        DELETE FROM as_timing_task
+        WHERE
+            mac = #{mac} AND userId = #{userId} AND `execute` = 0
+    </delete>
+    <!--关机删除定时  -->
+    <delete id="deleteTiming">
+     DELETE FROM as_timing_task
+        WHERE
+            mac = #{mac} 
+        AND
+        	`order` = #{order}
+    </delete>
+   
+    <!-- 修改定时任务 -->
+    <update id="updateTimingTasks">
+        UPDATE as_timing_task
+        <set>
+            `execute` = #{execute}
+        </set>
+        WHERE taskId = #{taskId}
+    </update>
+    <!-- 覆盖之前定时 -->
+    <update id="modifyTimingTasks" parameterType="com.air.pojo.entity.TimingTasks">
+        UPDATE as_timing_task
+        <set>
+            `exeTime` = #{exeTime}
+        </set>
+        WHERE userId = #{userId}
+        AND mac = #{mac}
+        AND execute = 0
+    </update>
+    
+    
+    <!-- 新增定时任务 -->
+    <insert id="insertTimingTasks" parameterType="com.air.pojo.entity.TimingTasks">
+        INSERT INTO as_timing_task(`order`, `userId`, `mac`, `execute`, `exeTime`)
+        VALUES(#{order}, #{userId}, #{mac}, 0, #{exeTime})
+    </insert>
+</mapper>

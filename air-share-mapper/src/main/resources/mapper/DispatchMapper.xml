@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.air.dispatch.mapper.DispatchMapper">
+
+	<!-- 插入派单记录 --> 
+	<insert id="insertDispatch" parameterType="java.util.List" useGeneratedKeys="false" keyProperty="dispatchId">
+		insert into as_dispatch(
+				dispatchId , 
+				repairId,
+				userId 
+				 
+			) values
+			
+		<foreach collection="list" item="item" separator=",">
+			 (
+				#{item.dispatchId} , 
+				#{item.repairId},
+				#{item.userId} 
+			)
+
+		</foreach>
+	</insert>
+	<!-- 删除派单记录 -->
+	<delete id="delDispatchByRepairId">
+		delete from as_dispatch where repairId = #{repairId}
+	</delete>
+		
+	<!-- 查询可抢单 --> 
+	<select id="selectByUserId" parameterType="Integer" resultMap="com.air.repair.mapper.RepairMapper.getRepairMap" >
+		SELECT r.repairId, r.airmac, r.userId, r.type, r.detail, r.content, r.comment, r.status, r.authorization, r.service,
+		r.priority, r.failPicture, r.repairPicture, r.dispatchTime, r.repairTime, r.created,r.modified, r.result,r.phone,a.partnerId,a.location
+		FROM as_repair r 
+		LEFT JOIN 
+			as_dispatch d
+		ON 
+			r.repairId =d.repairId
+		LEFT JOIN 
+			as_air_condition a
+        ON 
+        	r.airmac = a.mac
+		WHERE
+			d.userId =#{userId}
+		AND 
+			r.status = "assigned"	
+	</select>
+</mapper>

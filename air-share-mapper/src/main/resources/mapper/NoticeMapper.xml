@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper 
+    namespace="com.air.notice.mapper.NoticeMapper">
+    
+    <!-- <resultMap type="com.air.pojo.entity.AppUserAir" id="getUserCondition">
+        <id column="appuserAirId" property="appuserAirId"/>
+        <association property="conditions" column="mac" select="selectAirConditionById">
+        </association>
+    </resultMap> -->
+    
+    <!-- selectRepairByCondition; -->
+    <!-- 查询接口记录 -->
+    <select id="selectNoticeList" resultType="com.air.pojo.entity.Notice">
+        SELECT 
+            noticeId, title, content, created, send, appusersId
+        FROM 
+            as_user_notice 
+        where appusersId=0 or appusersId=#{appusersId} ORDER BY created DESC
+    </select>
+    
+	<!-- 添加接口 insertNotice -->
+	<insert id="insertNotice" parameterType="com.air.pojo.entity.Notice">
+		INSERT INTO as_user_notice (appusersId, title, content)
+		VALUES
+			(#{appusersId},#{title},#{content})
+	</insert>
+	
+	<!-- 	selectNoticeListBySend -->
+	 <select id="selectNoticeListBySend" resultType="com.air.pojo.entity.Notice">
+        SELECT 
+           noticeId, title, `content`, un.created, send, un.appusersId, telephone
+        FROM 
+            as_user_notice  un
+        LEFT JOIN as_app_users au
+        ON un.appusersId = au.appusersId
+        WHERE send=#{send} AND un.appusersId != 0
+    </select>
+    
+    <update id="updateNoticeByIdList">
+    	UPDATE as_user_notice
+    	SET 
+    		send = true 
+    	WHERE noticeId in 
+    	<foreach collection="noticeIdList" open="(" close=")" item="noticeId" separator=",">
+    		#{noticeId}
+    	</foreach>
+    </update>
+    
+	<!-- 批量添加通知信息 insertNoticeList -->
+	<insert id="insertNoticeList" parameterType="com.air.pojo.entity.Notice">
+		INSERT INTO as_user_notice (appusersId, title, content)
+		VALUES
+			<foreach collection="notices" item="notice" open="(" close=")" separator=",">
+				#{notice.appusersId},#{notice.title},#{notice.content}
+			</foreach>
+	</insert>
+	
+</mapper>

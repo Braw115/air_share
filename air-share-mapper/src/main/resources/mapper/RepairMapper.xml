@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.air.repair.mapper.RepairMapper">
+	<resultMap type="com.air.pojo.entity.Repair" id="getRepairMap">
+        <id column="repairId" property="repairId"/>
+        <result column="airmac" property="airmac" />
+        <association property="conditions" column="airmac" select="selectAirConditionById">
+        </association>
+    </resultMap>
+    
+	<resultMap type="com.air.pojo.entity.Evaluate" id="getEvaluateMap">
+        <id column="evaluateId" property="evaluateId"/>
+        <result column="repairId" property="repairId" />
+        <result column="content" property="content" />
+        <association property="repair" column="repairId" select="selectRepairByRepairId">
+        </association>
+    </resultMap>
+    
+	<!-- selectRepairByCondition; -->
+	<!-- 根据空调ID查找维修记录 -->
+	<select id="selectRepairByCondition"
+		resultMap="getRepairMap">
+		SELECT 
+			repairId, ar.airmac, userId,type, detail, content, comment, ar.status, priority, au.nickname nickName, cu.username,
+			failPicture, repairPicture, dispatchTime, repairTime, ar.created, ar.modified, result,ar.phone
+		FROM 
+			as_repair ar
+		LEFT JOIN
+		    as_app_users au
+		ON
+		    ar.userId = au.appusersId
+		LEFT JOIN
+            as_air_condition ac
+        ON 
+            ar.airmac = ac.mac
+        LEFT JOIN
+            as_crm_users cu
+        ON
+            ac.enterpriseId = cu.crmuserId
+		WHERE
+			airmac = #{mac}
+		AND
+			ar.status != "pending" 
+		ORDER BY dispatchTime DESC
+	</select>
+	
+	<!-- 添加故障记录 -->
+	<insert id="addRepair" parameterType="com.air.pojo.entity.Repair">
+	 	<selectKey keyProperty="repairId" resultType="java.lang.Integer">
+      		select LAST_INSERT_ID() as repairId
+      	</selectKey>
+	 	INSERT INTO 
+	 		as_repair(airmac, type, content, failPicture, status,phone,appusersId) 
+	 	VALUES
+	 		(#{airmac}, #{type}, #{content}, #{failPicture}, #{status},#{phone},#{appusersId})
+ 	</insert>
+
+	<!-- 添加评价 -->
+	<insert id="addEvaluation" parameterType="com.air.pojo.entity.Evaluate">
+	 	<selectKey keyProperty="evaluateId" resultType="java.lang.Integer">
+      		select LAST_INSERT_ID() as evaluateId
+      	</selectKey>
+	 	INSERT INTO 
+	 		as_evaluate(appusersId, technicianId, repairId, stars, content) 
+	 	VALUES
+	 		(#{appusersId}, #{technicianId}, #{repairId}, #{stars}, #{content})
+ 	</insert>
+ 	
+ 	
+	<!-- 根据维修ID查找该条维修记录 -->
+	<select id="selectRepairByRepairId"
+		resultMap="getRepairMap">
+		SELECT 
+			repairId, airmac, userId, type, detail, content, comment, status, authorization,
+			priority, failPicture, repairPicture, dispatchTime, repairTime, created, modified, result,phone,appusersId
+		FROM 
+			as_repair
+		WHERE
+			repairId = #{repairId}		
+	</select>
+	
+	<!-- 根据用户ID查询绑定的空调(待删) -->
+	<!-- <select id="selectAirConditionByUserId" resultMap="getUserCondition">
+		SELECT 
+			*
+		FROM 
+			as_appusers_air
+		WHERE
+			appusersId = #{appusersId}
+	</select> -->
+
+	<!-- repairId,airmac,userId,type,detail,content,comment,status,
+	priority,picture,dispatchTime,repairTime,created,modified,result -->
+	<!-- 修改维修记录 -->
+	<update id="updateRepair" parameterType="com.air.pojo.entity.Repair">
+		UPDATE 
+			as_repair
+		<trim prefix="set" suffixOverrides=",">
+			<if test="userId != null and userId != ''">
+				userId=#{userId},
+			</if>
+			<if test="repairPicture != null and repairPicture != ''">
+			    repairPicture=#{repairPicture},
+			</if>
+			<if test="comment != null and comment != ''">
+				comment=#{comment},
+			</if>
+			<if test="detail != null and detail != ''">
+				detail=#{detail},
+			</if>
+			<if test="status != null and status != ''">
+				status=#{status},
+			</if>
+			<if test="priority != null and priority != ''">
+				priority=#{priority},
+			</if>
+			<if test="repairTime != null and repairTime != ''">
+				repairTime=#{repairTime},
+			</if>
+			<if test="dispatchTime != null and dispatchTime != ''">
+				dispatchTime=#{dispatchTime},
+			</if>
+			<if test="result != null and result != ''">
+				result=#{result},
+			</if>
+			<if test="authorization != null">
+                authorization=#{authorization},
+            </if>
+            <if test="service != null">
+                `service`=#{service},
+            </if>
+            <if test="stars!= null">
+                stars=#{stars},
+            </if>
+            
+		</trim>
+		WHERE
+			repairId=#{repairId}
+	</update>
+	<!--抢单  -->
+	<update id="updateUserId" parameterType="com.air.pojo.entity.Repair">
+		UPDATE 
+			as_repair
+		<trim prefix="set" suffixOverrides=",">
+			<if test="userId != null and userId != ''">
+				userId = #{userId},
+			</if>
+		
+			<if test="status != null and status != ''">
+				`status` = #{status},
+			</if>
+		</trim>
+		WHERE
+			repairId=#{repairId}
+	</update>
+	
+	<!-- 根据维修用户ID查找维修记录 -->
+	
+	<select id="selectRepairList" parameterType="com.air.pojo.vo.RepairVO" resultMap="getRepairMap">
+		SELECT 
+			r.repairId, r.airmac, r.userId, r.type, r.detail, r.content, r.comment, r.stars, r.status, r.authorization, r.service,
+			r.priority, r.failPicture, r.repairPicture, r.dispatchTime, r.repairTime, r.created,r.modified, r.result, 
+			r.grabOrderTime,a.partnerId,r.phone,a.location,c.username,ap.nickname,ap.telephone as repairPhone
+		FROM 
+			as_repair r   
+		LEFT JOIN 
+			as_air_condition a 
+		ON 
+			r.airmac = a.mac 
+		LEFT JOIN 
+			as_app_users ap 
+		ON
+			r.userId = ap.appusersId
+		LEFT JOIN 
+			as_crm_users c
+		ON
+			a.partnerId = c.crmuserId 
+		<trim prefix="WHERE" prefixOverrides="AND |OR">
+			
+            <if test="airmac != null"> AND r.airmac = #{airmac}</if>
+            <if test="userId != null"> AND r.userId = #{userId}</if>
+            <if test="status != null and status != '' and status != 'processed'"> AND r.status = #{status}</if>
+            <if test="partnerId != null and partnerId != ''"> AND a.partnerId = #{partnerId}</if>
+            <if test="status == 'processed'">AND (r.status = #{status} OR r.status = 'evaluated')</if> 
+            <if test="beginDate != null and beginDate != ''"> AND r.created <![CDATA[>=]]> #{beginDate}</if>
+            <if test="endDate != null and endDate != ''"> AND r.created <![CDATA[<=]]> #{endDate}</if>
+            <if test="areaId != null"> AND a.areaId = #{areaId}</if>
+        </trim>
+        ORDER BY created DESC
+	</select>
+	
+	<!-- 根据维修ID查找该条维修记录 -->
+	<select id="selectEvaluationList" parameterType="com.air.pojo.vo.EvaluateVO"
+		resultMap="getEvaluateMap">
+		SELECT 
+			evaluateId, ae.appusersId, ae.technicianId, repairId, stars, isNews,
+			ae.content, ae.created, ae.modified, au.nickname nickName, au.headimg
+		FROM 
+			as_evaluate ae
+		LEFT JOIN
+		    as_app_users au
+		ON
+		    ae.appusersId = au.appusersId
+		
+		<trim prefix="WHERE" prefixOverrides="AND |OR">
+			<if test="appusersId != null and appusersId != ''"> AND appusersId = #{appusersId}</if>
+			<if test="technicianId != null and technicianId != ''"> AND technicianId = #{technicianId}</if>
+			<if test="repairId != null and repairId != ''"> AND repairId = #{repairId}</if>
+			<if test="stars != null and stars != ''"> AND stars = #{stars}</if>
+			
+			<if test="beginDate != null and beginDate != ''"> AND created <![CDATA[>=]]> #{beginDate}</if>
+			<if test="endDate != null and endDate != ''"> AND created <![CDATA[<=]]> #{endDate}</if>
+		</trim>
+		ORDER BY ae.created DESC
+	</select>
+	
+	<!-- 审批工单 -->
+	<update id="approvalOrders">
+	   UPDATE
+	       as_repair
+	   SET
+	       status = #{repairProcessed}
+	       <if test="repairProcessed == 'processing'">
+	       , detail = null, result = null, repairPicture = null
+	       </if>
+	   WHERE
+	       repairId IN
+	       <foreach collection="repairIdList" index="index" item="item" open="(" separator="," close=")">  
+	        #{item}  
+	       </foreach>
+	</update>
+	
+	<!-- 评价已阅读 -->
+	<update id="evaluationReaded">
+	   UPDATE
+	       as_evaluate
+	   SET
+	       isNews = 0
+	   WHERE
+	       evaluateId IN
+	       <foreach collection="evaluateIds" index="index" item="item" open="(" separator="," close=")">
+	        #{item} 
+	       </foreach>
+	</update>
+	
+	<!-- 获取新评价的条数根据用户Id -->
+	<select id="selectNewEvaluateByUser" resultType="java.lang.Integer">
+	   SELECT 
+	       COUNT(evaluateId) 
+	   FROM 
+	       as_evaluate 
+	   WHERE 
+	       isNews is TRUE AND technicianId = #{userId}
+	</select>
+	
+	<!-- 获取未待接收的维修数量 -->
+	<select id="selectNewRepairByUser" resultType="java.lang.Integer">
+	   SELECT 
+	       COUNT(repairId) 
+	   FROM 
+	       as_repair 
+	   WHERE 
+	       status='assigned' AND userId = #{userId}
+	</select>
+	<!-- 根据空调ID查找空调信息 -->
+    <select id="selectAirConditionById"
+        resultType="com.air.pojo.entity.AirCondition">
+        SELECT 
+            mac, electricity, useTime, operationTime, longitude, latitude, newUseTime, newRepairTime, 
+            balance, lastUpdate, fault, seriesId, enterpriseId, ac.areaId, useStatus, windSpeed, model, 
+            ac.created, ac.modified, username, enterpriseId,location
+        FROM 
+            as_air_condition ac
+        LEFT JOIN
+            as_crm_users cu
+        ON ac.enterpriseId = cu.crmuserId
+        WHERE
+            mac = #{mac}        
+    </select>
+    
+    <!-- 根据空调ID查找空调信息 -->
+    <select id="getConditionRepair" resultMap="getRepairMap" >
+        SELECT 
+            ar.repairId,ar.appusersId, ar.airmac, userId,type, detail, ar.content, ae.content `comment`, ae.stars, ar.status, priority, au.nickname nickName, cu.username,
+            failPicture, repairPicture, dispatchTime, repairTime, ar.created, ar.modified, result
+        FROM 
+            as_repair ar
+        LEFT JOIN
+            as_app_users au
+        ON
+            ar.userId = au.appusersId
+        LEFT JOIN
+            as_air_condition ac
+        ON 
+            ar.airmac = ac.mac
+        LEFT JOIN
+            as_crm_users cu
+        ON
+            ac.enterpriseId = cu.crmuserId
+        LEFT JOIN 
+            as_evaluate ae 
+        ON ae.repairId = ar.repairId
+        <where>
+	        <if test="mac != null and mac != ''" >
+	            AND airmac = #{mac}
+	        </if>
+	        <if test="appUserId != null and appUserId != '' and appUserId !=0" >
+	            AND ar.appusersId = #{appUserId}
+	        </if>
+            <if test="status != null and status == 'processing'">
+                AND status IN('pending', 'assigned', 'processing', 'checking')
+            </if>
+            <if test="status != null and status == 'completed'">
+                AND status IN('processed', 'evaluated')
+            </if>
+        </where>
+        <if test="status != null and status == 'processing'">
+            ORDER BY ar.created DESC
+        </if>
+        <if test="status != null and status == 'completed'">
+            ORDER BY ar.repairTime DESC
+        </if>
+    </select>
+    
+    <!-- 查询维修人员是否有未完成工单 -->
+    <select id="selectByUserIdAndStatus" parameterType="com.air.pojo.entity.Repair" resultType="com.air.pojo.entity.Repair">
+    	SELECT
+    		repairId, airmac, userId, type, detail, content, comment, status, authorization,
+			priority, failPicture, repairPicture, dispatchTime, repairTime, created, modified, result,phone
+		FROM 
+			as_repair
+		WHERE userId = #{userId}
+		AND status != 'checking'
+		AND status != 'processed' 
+		AND status != 'evaluated'
+    </select>
+    
+    <!--根据mac地址,查询该空调是否有未完成的单  -->
+    <select id="selectByMacAndStatus" parameterType="com.air.pojo.entity.Repair" resultType="com.air.pojo.entity.Repair">
+    	SELECT
+    		repairId, airmac, userId, type, detail, content, comment, status, authorization,
+			priority, failPicture, repairPicture, dispatchTime, repairTime, created, modified, result,phone
+		FROM 
+			as_repair
+		WHERE airmac = #{airmac}
+		AND status != 'checking'
+		AND status != 'processed' 
+		AND status != 'evaluated'
+    </select>
+</mapper>
+
+
